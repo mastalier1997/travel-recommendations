@@ -19,7 +19,8 @@ export default async function LoginPage({
           <LoginForm next={next ?? '/plans'} />
           {process.env.NODE_ENV !== 'production' && (
             <p className={styles.hint}>
-              Dev shortcut: <a href="/api/dev-login">sign in as dev@local.test</a>
+              Dev shortcut: <a href="/api/dev-login">sign in as dev@local.test</a> ·{' '}
+              <a href="/dev/fixture">preview fixtures</a>
             </p>
           )}
         </>
