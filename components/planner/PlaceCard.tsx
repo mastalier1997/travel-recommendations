@@ -1,7 +1,10 @@
 'use client';
 
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import type { Place, RouteLeg } from '@/lib/types';
 import { formatDistance, formatDurationShort } from '@/lib/format';
+import { CardActions } from './CardActions';
 import styles from './planner.module.css';
 
 type Props = {
@@ -13,6 +16,9 @@ type Props = {
   selected: boolean;
   stale: boolean;
   onSelect: (id: string) => void;
+  onMove: (index: number, delta: number) => void;
+  onMoveTo: (index: number, to: number) => void;
+  onRemove: (index: number) => void;
   cardRef?: (el: HTMLButtonElement | null) => void;
 };
 
@@ -38,13 +44,26 @@ export function PlaceCard({
   selected,
   stale,
   onSelect,
+  onMove,
+  onMoveTo,
+  onRemove,
   cardRef,
 }: Props) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: place.id,
+  });
+
   const unresolved = place.status === 'unresolved';
   const meta = [regionLabel(place), categoryLabel(place)].filter(Boolean).join(' · ');
+  const displayName = unresolved ? place.raw : place.name;
 
   return (
-    <li className={styles.item}>
+    <li
+      ref={setNodeRef}
+      className={styles.item}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      data-dragging={isDragging}
+    >
       {leg && (
         /*
          * The polyline's only unique information. Without it as text the map is not
@@ -57,11 +76,21 @@ export function PlaceCard({
         </p>
       )}
 
-      <div
-        className={styles.card}
-        data-selected={selected}
-        data-unresolved={unresolved}
-      >
+      <div className={styles.card} data-selected={selected} data-unresolved={unresolved}>
+        {/*
+         * A real button, not a div with tabIndex — that makes most of dnd-kit's
+         * injected role/tabindex attributes redundant, which is the point.
+         */}
+        <button
+          type="button"
+          className={styles.grip}
+          aria-label={`Reorder ${displayName}`}
+          {...attributes}
+          {...listeners}
+        >
+          <span aria-hidden="true">⠿</span>
+        </button>
+
         <span className={styles.badge} aria-hidden="true">
           {index + 1}
         </span>
@@ -76,7 +105,7 @@ export function PlaceCard({
           >
             {/* Order is in the accessible name, not only in the badge. */}
             <span className="sr-only">{`Stop ${index + 1} of ${total}: `}</span>
-            {unresolved ? place.raw : place.name}
+            {displayName}
           </button>
 
           {unresolved ? (
@@ -89,6 +118,15 @@ export function PlaceCard({
             </>
           )}
         </div>
+
+        <CardActions
+          name={displayName}
+          index={index}
+          total={total}
+          onMove={(delta) => onMove(index, delta)}
+          onMoveTo={(to) => onMoveTo(index, to)}
+          onRemove={() => onRemove(index)}
+        />
       </div>
     </li>
   );

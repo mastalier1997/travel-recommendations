@@ -31,6 +31,8 @@ type Props = {
   selectedStopId: string | null;
   onSelectStop: (id: string) => void;
   reducedMotion: boolean;
+  /** True while a card is being dragged — the map must stop competing for the gesture. */
+  interactionLocked?: boolean;
 };
 
 export function MapView({
@@ -40,6 +42,7 @@ export function MapView({
   selectedStopId,
   onSelectStop,
   reducedMotion,
+  interactionLocked,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -179,6 +182,19 @@ export function MapView({
     if (reducedMotion) map.jumpTo(to);
     else map.easeTo({ ...to, duration: 600 });
   }, [selectedStopId, places, reducedMotion]);
+
+  // --- gesture arbitration -------------------------------------------------
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (interactionLocked) {
+      map.dragPan.disable();
+      map.touchZoomRotate.disable();
+    } else {
+      map.dragPan.enable();
+      map.touchZoomRotate.enable();
+    }
+  }, [interactionLocked]);
 
   const zoom = (delta: number) => {
     const map = mapRef.current;
