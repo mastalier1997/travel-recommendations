@@ -4,6 +4,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Place, RouteLeg } from '@/lib/types';
 import { formatDistance, formatDurationShort } from '@/lib/format';
+import { labelForOsmTag } from '@/lib/content/osm-labels';
 import { CardActions } from './CardActions';
 import styles from './planner.module.css';
 
@@ -22,13 +23,9 @@ type Props = {
   cardRef?: (el: HTMLButtonElement | null) => void;
 };
 
-/**
- * ponytail: titlecased OSM tag. Track E owns the ~40-entry label table
- * (content/osm-labels.ts); swap this call for it when that lands.
- */
 function categoryLabel(place: Place): string | null {
   if (!place.osm) return null;
-  return place.osm.tag.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
+  return labelForOsmTag(place.osm.class, place.osm.tag);
 }
 
 function regionLabel(place: Place): string | null {
