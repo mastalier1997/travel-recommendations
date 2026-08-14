@@ -8,3 +8,6 @@ build/
 next-env.d.ts
 *.tsbuildinfo
 .DS_Store
+graphify-out
+.claude
+.mcp.json

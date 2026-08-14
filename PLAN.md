@@ -97,17 +97,21 @@ on every plan read, and every consumer (map, export, routing, drag) would have t
 
 ## Parallel tracks (all start after P0)
 
-| Track | Owns | Needs | Verify with |
-|---|---|---|---|
-| **A. Persistence + auth** | migrations, RLS, `plans/page.tsx`, `plans/[id]/actions.ts` | — | seed `SAMPLE_PLAN`, two-tab conflict test |
-| **B. Planner shell** | `Planner`, `MapView`, `PlaceList`, `PlaceCard`, `BottomSheet`, breakpoints | — | `initialPlan = SAMPLE_PLAN`, zero network |
-| **C. Parsing** | `split-lines`, `scan-prose`, `parse-file`, `draft.ts` reducer | — | vitest, pure functions, no UI |
-| **D. Geocode service** | `/api/geocode`, `geo/*`, `geo_cache`, `rate_gate` | — | curl + recorded fixtures |
-| **E. Descriptions** | `/api/describe`, `content/*`, OSM label table | — | `Place[]` fixture in, coverage % out |
-| **F. Routing** | `/api/optimize`, `routing/osrm.ts`, `orderHash` | — | `{stops[]}` fixture in, `Route` out |
-| **G. Reorder + gestures** | actions menu, dnd-kit, `interactionMode` | B | keyboard-only pass, NVDA + VoiceOver |
-| **H. Export** | `export/{kml,gpx,geojson}.ts` | — | golden-file tests against `SAMPLE_PLAN` |
-| **I. Import UI** | `ImportScreen` (M4), `ConfirmList` (M3), `CandidateRow` | C, D | axe, error-summary focus test |
+| Track | Owns | Needs | Verify with | Status |
+|---|---|---|---|---|
+| **A. Persistence + auth** | migrations, RLS, `plans/page.tsx`, `plans/[id]/actions.ts` | — | seed `SAMPLE_PLAN`, two-tab conflict test | ✅ done |
+| **B. Planner shell** | `Planner`, `MapView`, `PlaceList`, `PlaceCard`, `BottomSheet`, breakpoints | — | `initialPlan = SAMPLE_PLAN`, zero network | ✅ done |
+| **C. Parsing** | `split-lines`, `scan-prose`, `parse-file`, `draft.ts` reducer | — | vitest, pure functions, no UI | ✅ done |
+| **D. Geocode service** | `/api/geocode`, `geo/*`, `geo_cache`, `rate_gate` | — | curl + recorded fixtures | ✅ done |
+| **E. Descriptions** | `/api/describe`, `content/*`, OSM label table | — | `Place[]` fixture in, coverage % out | ✅ done |
+| **F. Routing** | `/api/optimize`, `routing/osrm.ts`, `orderHash` | — | `{stops[]}` fixture in, `Route` out | 📋 spec ready — [.claude/plans/track-f-routing.plan.md](.claude/plans/track-f-routing.plan.md) |
+| **G. Reorder + gestures** | actions menu, dnd-kit, `interactionMode` | B | keyboard-only pass, NVDA + VoiceOver | ✅ done |
+| **H. Export** | `export/{kml,gpx,geojson}.ts` | — | golden-file tests against `SAMPLE_PLAN` | 📋 spec ready — [.claude/plans/track-h-export.plan.md](.claude/plans/track-h-export.plan.md) |
+| **I. Import UI** | `ImportScreen` (M4), `ConfirmList` (M3), `CandidateRow` | C, D | axe, error-summary focus test | 📋 spec ready — [.claude/plans/track-i-import-ui.plan.md](.claude/plans/track-i-import-ui.plan.md) |
+
+Each `📋 spec ready` doc is self-contained: current-state summary, exact file paths, verified
+third-party contracts (where relevant), and acceptance criteria. A fresh session can implement one
+directly from its plan file with no other context from this repo's history.
 
 Seams that make this work: `Candidate` is provider-normalized so B/C/G never learn which geocoder
 answered; `Route` is a value object so B/H don't know OSRM exists; `MOCK=1` means UI tracks never
