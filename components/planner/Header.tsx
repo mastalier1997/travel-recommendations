@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { SaveStatus } from '@/lib/hooks/useAutosave';
+import type { Place, Route } from '@/lib/types';
+import { ExportMenu } from './ExportMenu';
 import styles from './planner.module.css';
 
 type Props = {
@@ -11,6 +13,11 @@ type Props = {
   plans?: { id: string; title: string }[];
   /** Undefined in fixture mode, where nothing is being saved. */
   saveStatus?: SaveStatus;
+  places: Place[];
+  route: Route | null;
+  isMobile: boolean;
+  /** False in fixture mode — there is no real plan row to import into. */
+  canImport: boolean;
 };
 
 const SAVE_LABEL: Record<SaveStatus, string> = {
@@ -21,7 +28,16 @@ const SAVE_LABEL: Record<SaveStatus, string> = {
   error: 'Not saved',
 };
 
-export function Header({ title, currentId, plans, saveStatus }: Props) {
+export function Header({
+  title,
+  currentId,
+  plans,
+  saveStatus,
+  places,
+  route,
+  isMobile,
+  canImport,
+}: Props) {
   const router = useRouter();
   const options = plans?.length ? plans : [{ id: currentId ?? 'current', title }];
 
@@ -66,10 +82,12 @@ export function Header({ title, currentId, plans, saveStatus }: Props) {
             {SAVE_LABEL[saveStatus]}
           </span>
         )}
-        {/* Track H hangs the KML/GPX/GeoJSON popover off this trigger. */}
-        <button type="button" className={styles.ghost}>
-          Export
-        </button>
+        {canImport && currentId && (
+          <Link href={`/plans/${currentId}/import`} className={styles.ghost}>
+            Import places
+          </Link>
+        )}
+        <ExportMenu title={title} places={places} route={route} isMobile={isMobile} />
         <span className={styles.avatar} aria-hidden="true">
           MK
         </span>

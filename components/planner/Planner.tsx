@@ -205,6 +205,10 @@ export function Planner({ initialPlan, onSave, plans }: Props) {
         currentId={initialPlan.id}
         plans={plans}
         saveStatus={onSave ? save.status : undefined}
+        places={places}
+        route={route}
+        isMobile={isMobile}
+        canImport={!!onSave}
       />
 
       {save.status === 'conflict' && (

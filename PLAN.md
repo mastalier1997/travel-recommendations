@@ -106,12 +106,8 @@ on every plan read, and every consumer (map, export, routing, drag) would have t
 | **E. Descriptions** | `/api/describe`, `content/*`, OSM label table | — | `Place[]` fixture in, coverage % out | ✅ done |
 | **F. Routing** | `/api/optimize`, `routing/osrm.ts`, `orderHash` | — | `{stops[]}` fixture in, `Route` out | ✅ done |
 | **G. Reorder + gestures** | actions menu, dnd-kit, `interactionMode` | B | keyboard-only pass, NVDA + VoiceOver | ✅ done |
-| **H. Export** | `export/{kml,gpx,geojson}.ts` | — | golden-file tests against `SAMPLE_PLAN` | 📋 spec ready — [.claude/plans/track-h-export.plan.md](.claude/plans/track-h-export.plan.md) |
-| **I. Import UI** | `ImportScreen` (M4), `ConfirmList` (M3), `CandidateRow` | C, D | axe, error-summary focus test | 📋 spec ready — [.claude/plans/track-i-import-ui.plan.md](.claude/plans/track-i-import-ui.plan.md) |
-
-Each `📋 spec ready` doc is self-contained: current-state summary, exact file paths, verified
-third-party contracts (where relevant), and acceptance criteria. A fresh session can implement one
-directly from its plan file with no other context from this repo's history.
+| **H. Export** | `export/{kml,gpx,geojson}.ts` | — | golden-file tests against `SAMPLE_PLAN` | ✅ done |
+| **I. Import UI** | `ImportScreen` (M4), `ConfirmList` (M3), `CandidateRow` | C, D | axe, error-summary focus test | ✅ done |
 
 Seams that make this work: `Candidate` is provider-normalized so B/C/G never learn which geocoder
 answered; `Route` is a value object so B/H don't know OSRM exists; `MOCK=1` means UI tracks never

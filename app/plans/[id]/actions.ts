@@ -40,6 +40,44 @@ export async function savePlan(
   return { ok: true, version: data.version as number };
 }
 
+/**
+ * Track I's commit step. Appends imported places to whatever the plan's `places`
+ * currently are server-side — the import flow never held the full array, only the
+ * rows it just resolved — under the same version-conditional guard as savePlan.
+ */
+export async function commitImportedPlaces(
+  id: string,
+  input: { newPlaces: Place[]; version: number },
+): Promise<SaveResult> {
+  const supabase = await createClient();
+
+  const { data: current, error: readError } = await supabase
+    .from('plans')
+    .select('places, version')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (readError) return { ok: false, error: readError.message };
+  if (!current || current.version !== input.version) return { ok: false, conflict: true };
+
+  const places = [...((current.places as Place[]) ?? []), ...input.newPlaces];
+
+  const { data, error } = await supabase
+    .from('plans')
+    .update({ places, version: input.version + 1, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('version', input.version)
+    .select('version')
+    .maybeSingle();
+
+  if (error) return { ok: false, error: error.message };
+  if (!data) return { ok: false, conflict: true };
+
+  revalidatePath(`/plans/${id}`);
+  revalidatePath('/plans');
+  return { ok: true, version: data.version as number };
+}
+
 export async function renamePlan(id: string, title: string): Promise<SaveResult> {
   const supabase = await createClient();
   const clean = title.trim().slice(0, 120) || 'Untitled plan';

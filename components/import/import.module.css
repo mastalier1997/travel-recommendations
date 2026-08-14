@@ -1,0 +1,246 @@
+/* Track I — import screens (M4 paste/upload, M3 confirm). */
+
+.wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 56px 20px calc(var(--sticky-bar-h) + 40px);
+}
+
+.importScreen {
+  margin-bottom: 32px;
+}
+
+.label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.textarea {
+  width: 100%;
+  font: inherit;
+  font-size: 14px;
+  padding: 12px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius);
+  resize: vertical;
+}
+
+.importActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.importActions button,
+.scanBtn {
+  font: inherit;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius);
+  padding: 9px 14px;
+  min-height: 40px;
+  cursor: pointer;
+}
+.importActions button[disabled],
+.scanBtn[disabled] {
+  opacity: 0.6;
+  cursor: default;
+}
+.importActions .on-accent {
+  color: #fff;
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
+.scanBtn {
+  margin-top: 12px;
+}
+
+.hint {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: var(--text-subtle);
+}
+
+.error {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  font-size: 13px;
+  background: var(--amber-chip-bg);
+  color: var(--amber-chip-text);
+  border: 1px solid var(--amber-edge);
+  border-radius: var(--radius);
+}
+
+/* --- confirm list (M3) ---------------------------------------------------- */
+
+.errorSummary {
+  margin: 0 0 20px;
+  padding: 12px 14px;
+  background: var(--amber-chip-bg);
+  border: 1px solid var(--amber-edge);
+  border-radius: var(--radius);
+}
+.errorSummary p {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--amber-chip-text);
+}
+.errorSummary ul {
+  margin: 0;
+  padding-left: 20px;
+}
+.errorSummary a {
+  font-size: 13px;
+}
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.row {
+  padding: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border-hairline-strong);
+  border-radius: var(--radius);
+}
+
+.fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.fieldset legend {
+  padding: 0 0 10px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.candidateLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px;
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-sm);
+  margin-bottom: 6px;
+  cursor: pointer;
+}
+.candidateLabel:has(input:checked) {
+  border-color: var(--accent-strong);
+  background: var(--bg-sunken);
+}
+.candidateLabel input {
+  margin-right: 8px;
+}
+.name {
+  font-size: 13px;
+  font-weight: 500;
+}
+.meta {
+  font-size: 11px;
+  color: var(--text-subtle);
+}
+
+.retypeRow {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.retypeRow input {
+  flex: 1;
+  font: inherit;
+  font-size: 13px;
+  padding: 8px 10px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-sm);
+}
+.retypeRow button {
+  font: inherit;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.skipBtn {
+  display: block;
+  margin-top: 8px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text-muted);
+  background: none;
+  border: 0;
+  padding: 4px 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.retryBtn {
+  font: inherit;
+  font-size: 13px;
+  color: var(--accent-strong);
+  background: none;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.stickyBar {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  min-height: var(--sticky-bar-h);
+  margin-top: 20px;
+  padding: 12px 0;
+  background: var(--bg);
+  border-top: 1px solid var(--border-hairline);
+}
+.stickyBar button {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  background: var(--accent-strong);
+  border: 1px solid var(--accent-strong);
+  border-radius: var(--radius);
+  padding: 10px 18px;
+  min-height: 44px;
+  cursor: pointer;
+}
+.stickyBar button[disabled] {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.warning {
+  margin: 0;
+  font-size: 12px;
+  color: var(--amber-chip-text);
+}
