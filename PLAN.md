@@ -104,7 +104,7 @@ on every plan read, and every consumer (map, export, routing, drag) would have t
 | **C. Parsing** | `split-lines`, `scan-prose`, `parse-file`, `draft.ts` reducer | — | vitest, pure functions, no UI | ✅ done |
 | **D. Geocode service** | `/api/geocode`, `geo/*`, `geo_cache`, `rate_gate` | — | curl + recorded fixtures | ✅ done |
 | **E. Descriptions** | `/api/describe`, `content/*`, OSM label table | — | `Place[]` fixture in, coverage % out | ✅ done |
-| **F. Routing** | `/api/optimize`, `routing/osrm.ts`, `orderHash` | — | `{stops[]}` fixture in, `Route` out | 📋 spec ready — [.claude/plans/track-f-routing.plan.md](.claude/plans/track-f-routing.plan.md) |
+| **F. Routing** | `/api/optimize`, `routing/osrm.ts`, `orderHash` | — | `{stops[]}` fixture in, `Route` out | ✅ done |
 | **G. Reorder + gestures** | actions menu, dnd-kit, `interactionMode` | B | keyboard-only pass, NVDA + VoiceOver | ✅ done |
 | **H. Export** | `export/{kml,gpx,geojson}.ts` | — | golden-file tests against `SAMPLE_PLAN` | 📋 spec ready — [.claude/plans/track-h-export.plan.md](.claude/plans/track-h-export.plan.md) |
 | **I. Import UI** | `ImportScreen` (M4), `ConfirmList` (M3), `CandidateRow` | C, D | axe, error-summary focus test | 📋 spec ready — [.claude/plans/track-i-import-ui.plan.md](.claude/plans/track-i-import-ui.plan.md) |

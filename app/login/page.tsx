@@ -15,7 +15,14 @@ export default async function LoginPage({
     <main className={styles.wrap}>
       <h1 className={styles.title}>Sign in to Wanderlist</h1>
       {isSupabaseConfigured ? (
-        <LoginForm next={next ?? '/plans'} />
+        <>
+          <LoginForm next={next ?? '/plans'} />
+          {process.env.NODE_ENV !== 'production' && (
+            <p className={styles.hint}>
+              Dev shortcut: <a href="/api/dev-login">sign in as dev@local.test</a>
+            </p>
+          )}
+        </>
       ) : (
         <p className={styles.hint}>
           Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and

@@ -1,27 +1,21 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import maplibregl, { type LngLatBoundsLike, type StyleSpecification } from 'maplibre-gl';
+import maplibregl, { type LngLatBoundsLike } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Place, Route } from '@/lib/types';
 import styles from './planner.module.css';
 
 const KEY = process.env.NEXT_PUBLIC_MAPTILER_KEY;
 
-/**
- * With no key we still render a working map — background paint, no tiles. The route
- * and pins are the point; this keeps the whole shell runnable with zero credentials
- * and avoids leaning on anyone's free tile server as a default.
- */
-const NO_TILE_STYLE: StyleSpecification = {
-  version: 8,
-  sources: {},
-  layers: [{ id: 'bg', type: 'background', paint: { 'background-color': '#e2e6dc' } }],
-};
-
+// No key needed: OpenFreeMap's public instance is keyless and unmetered, so it's
+// a safe default rather than a blank background. Swap in MAPTILER_KEY for nicer
+// styling if you have one.
+// TODO: OpenFreeMap has no uptime/SLA guarantee — if this ships to real users,
+// move to MapTiler (or self-host OpenFreeMap) for a reliability backstop.
 const STYLE = KEY
   ? `https://api.maptiler.com/maps/landscape/style.json?key=${KEY}`
-  : NO_TILE_STYLE;
+  : 'https://tiles.openfreemap.org/styles/liberty';
 
 type Props = {
   places: Place[];
@@ -231,7 +225,10 @@ export function MapView({
             <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors
           </>
         ) : (
-          <>No map tiles — set NEXT_PUBLIC_MAPTILER_KEY</>
+          <>
+            © <a href="https://openfreemap.org">OpenFreeMap</a> ©{' '}
+            <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors
+          </>
         )}
       </p>
     </div>
