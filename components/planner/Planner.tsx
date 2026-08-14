@@ -5,6 +5,7 @@ import type { OptimizeResponse, Plan, Place, Route } from '@/lib/types';
 import { isRouteStale, orderHash } from '@/lib/routing/order';
 import { focusIndexAfterRemove, insertAt, moveTo, removeAt } from '@/lib/plan/reorder';
 import { useIsMobile, usePrefersReducedMotion } from '@/lib/hooks/useMediaQuery';
+import { useAutosave, type SaveResult } from '@/lib/hooks/useAutosave';
 import { MapView } from './MapView';
 import { PlaceList } from './PlaceList';
 import { SummaryBar } from './SummaryBar';
@@ -14,7 +15,18 @@ import styles from './planner.module.css';
 
 const UNDO_MS = 10_000;
 
-export function Planner({ initialPlan }: { initialPlan: Plan }) {
+type Props = {
+  initialPlan: Plan;
+  /** Absent in fixture mode: the demo planner on `/` persists nothing. */
+  onSave?: (input: {
+    places: Place[];
+    route: Route | null;
+    version: number;
+  }) => Promise<SaveResult>;
+  plans?: { id: string; title: string }[];
+};
+
+export function Planner({ initialPlan, onSave, plans }: Props) {
   const [places, setPlaces] = useState<Place[]>(initialPlan.places);
   const [route, setRoute] = useState<Route | null>(initialPlan.route);
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
@@ -32,6 +44,19 @@ export function Planner({ initialPlan }: { initialPlan: Plan }) {
   const routeStale = isRouteStale(places, route);
 
   useEffect(() => () => void (undoTimer.current && clearTimeout(undoTimer.current)), []);
+
+  const noop = useCallback(async () => ({ ok: true as const, version: initialPlan.version }), [
+    initialPlan.version,
+  ]);
+  const save = useAutosave({
+    enabled: !!onSave,
+    places,
+    route,
+    initialVersion: initialPlan.version,
+    // Writing on every frame of a reorder would be pointless traffic.
+    paused: dragging,
+    onSave: onSave ?? noop,
+  });
 
   const selectFromMap = useCallback((id: string) => {
     setSelectedStopId(id);
@@ -175,7 +200,27 @@ export function Planner({ initialPlan }: { initialPlan: Plan }) {
         Skip to stops list
       </a>
 
-      <Header title={initialPlan.title} />
+      <Header
+        title={initialPlan.title}
+        currentId={initialPlan.id}
+        plans={plans}
+        saveStatus={onSave ? save.status : undefined}
+      />
+
+      {save.status === 'conflict' && (
+        <p className={styles.error} role="alert">
+          This plan was changed somewhere else, so your recent edits were not saved.{' '}
+          <button type="button" className={styles.undoBtn} onClick={() => location.reload()}>
+            Reload the latest version
+          </button>
+        </p>
+      )}
+
+      {save.status === 'error' && save.error && (
+        <p className={styles.error} role="alert">
+          Could not save: {save.error}
+        </p>
+      )}
 
       {error && (
         <p className={styles.error} role="alert">

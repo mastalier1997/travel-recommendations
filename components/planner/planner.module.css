@@ -77,6 +77,12 @@
 .ghost:hover {
   background: var(--bg-sunken);
 }
+.saveStatus {
+  font-size: 11px;
+  color: var(--text-subtle);
+  white-space: nowrap;
+}
+
 .avatar {
   width: 30px;
   height: 30px;
