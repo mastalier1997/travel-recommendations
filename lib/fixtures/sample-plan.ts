@@ -1,5 +1,6 @@
 import type { Plan, Place, Route, RouteLeg } from '@/lib/types';
 import { orderHash } from '@/lib/routing/order';
+import { place } from './place';
 
 /**
  * The desktop Planner screen from the design, as data. Every UI track (B, G, H) can
@@ -15,25 +16,10 @@ import { orderHash } from '@/lib/routing/order';
 
 const AT = '2026-08-01T09:00:00.000Z';
 
-function place(p: Partial<Place> & Pick<Place, 'id' | 'name' | 'lat' | 'lon'>): Place {
-  return {
-    raw: p.name,
-    status: 'confirmed',
-    address: null,
-    osm: null,
-    wikidata: null,
-    wikipedia: null,
-    description: null,
-    notes: null,
-    origin: 'line',
-    addedAt: AT,
-    ...p,
-  } as Place;
-}
-
 export const SAMPLE_PLACES: Place[] = [
   place({
     id: 'pl_fushimi',
+    addedAt: AT,
     name: 'Fushimi Inari Taisha',
     lat: 34.9671,
     lon: 135.7727,
@@ -50,6 +36,7 @@ export const SAMPLE_PLACES: Place[] = [
   }),
   place({
     id: 'pl_nishiki',
+    addedAt: AT,
     name: 'Nishiki Market',
     lat: 35.005,
     lon: 135.7649,
@@ -66,6 +53,7 @@ export const SAMPLE_PLACES: Place[] = [
   }),
   place({
     id: 'pl_kiyomizu',
+    addedAt: AT,
     // The user typed something vague and confirmed a candidate — `raw` keeps the original.
     raw: 'kiyomizu temple',
     name: 'Kiyomizu-dera',
@@ -84,6 +72,7 @@ export const SAMPLE_PLACES: Place[] = [
   }),
   place({
     id: 'pl_arashiyama',
+    addedAt: AT,
     name: 'Arashiyama Bamboo Grove',
     lat: 35.017,
     lon: 135.6717,
@@ -100,6 +89,7 @@ export const SAMPLE_PLACES: Place[] = [
   }),
   place({
     id: 'pl_dotonbori',
+    addedAt: AT,
     name: 'Dotonbori',
     lat: 34.6687,
     lon: 135.5013,
@@ -116,6 +106,7 @@ export const SAMPLE_PLACES: Place[] = [
   }),
   place({
     id: 'pl_osakacastle',
+    addedAt: AT,
     name: 'Osaka Castle',
     lat: 34.6873,
     lon: 135.5262,
@@ -132,6 +123,7 @@ export const SAMPLE_PLACES: Place[] = [
   }),
   place({
     id: 'pl_teamlab',
+    addedAt: AT,
     raw: 'teamlab',
     name: 'teamLab Botanical Garden',
     lat: 34.61,
@@ -149,6 +141,7 @@ export const SAMPLE_PLACES: Place[] = [
   }),
   place({
     id: 'pl_nara',
+    addedAt: AT,
     name: 'Nara Deer Park',
     lat: 34.6851,
     lon: 135.843,
@@ -165,6 +158,7 @@ export const SAMPLE_PLACES: Place[] = [
   }),
   place({
     id: 'pl_kobe',
+    addedAt: AT,
     name: 'Kobe beef district, Sannomiya',
     lat: 34.6947,
     lon: 135.1955,

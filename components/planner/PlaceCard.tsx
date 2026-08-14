@@ -110,7 +110,11 @@ export function PlaceCard({
             <p className={styles.needsReview}>Needs review — pick a match</p>
           ) : (
             <>
-              {place.description && <p className={styles.cardDesc}>{place.description.text}</p>}
+              {place.description && (
+                <p className={styles.cardDesc} lang={place.description.lang ?? undefined}>
+                  {place.description.text}
+                </p>
+              )}
               {meta && <p className={styles.cardMeta}>{meta}</p>}
             </>
           )}
