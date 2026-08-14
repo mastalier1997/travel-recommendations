@@ -1,0 +1,97 @@
+{
+  "_comment": "Recorded /api/geocode responses, keyed by normalized query (lowercased, whitespace-collapsed, trimmed). Covers every DraftRow terminal state: single, multiple, none. Track D replays these; Track I renders them.",
+
+  "fushimi inari": {
+    "candidates": [
+      {
+        "name": "Fushimi Inari Taisha",
+        "address": "68 Fukakusa Yabunouchichō, Fushimi-ku, Kyoto, Japan",
+        "lat": 34.9671,
+        "lon": 135.7727,
+        "osm": { "type": "way", "id": 32952536, "class": "historic", "tag": "shrine" },
+        "wikidata": null,
+        "wikipedia": "en:Fushimi Inari-taisha",
+        "importance": 0.71,
+        "class": "historic",
+        "tag": "shrine"
+      }
+    ]
+  },
+
+  "nishiki market": {
+    "candidates": [
+      {
+        "name": "Nishiki Market",
+        "address": "Nakagyo-ku, Kyoto, Japan",
+        "lat": 35.005,
+        "lon": 135.7649,
+        "osm": { "type": "way", "id": 197325544, "class": "amenity", "tag": "marketplace" },
+        "wikidata": null,
+        "wikipedia": "en:Nishiki Market",
+        "importance": 0.58,
+        "class": "amenity",
+        "tag": "marketplace"
+      }
+    ]
+  },
+
+  "kiyomizu temple": {
+    "candidates": [
+      {
+        "name": "Kiyomizu-dera",
+        "address": "1-294 Kiyomizu, Higashiyama-ku, Kyoto, Japan",
+        "lat": 34.9949,
+        "lon": 135.785,
+        "osm": { "type": "way", "id": 25778641, "class": "historic", "tag": "temple" },
+        "wikidata": null,
+        "wikipedia": "en:Kiyomizu-dera",
+        "importance": 0.42,
+        "class": "historic",
+        "tag": "temple"
+      },
+      {
+        "name": "Kiyomizu",
+        "address": "Naniwa-ku, Osaka, Japan",
+        "lat": 34.6534,
+        "lon": 135.5011,
+        "osm": { "type": "node", "id": 6021554221, "class": "place", "tag": "neighbourhood" },
+        "wikidata": null,
+        "wikipedia": null,
+        "importance": 0.31,
+        "class": "place",
+        "tag": "neighbourhood"
+      }
+    ]
+  },
+
+  "teamlab": {
+    "candidates": [
+      {
+        "name": "teamLab Botanical Garden",
+        "address": "Nagai Park, Higashisumiyoshi-ku, Osaka, Japan",
+        "lat": 34.61,
+        "lon": 135.518,
+        "osm": { "type": "way", "id": 158942371, "class": "tourism", "tag": "attraction" },
+        "wikidata": null,
+        "wikipedia": null,
+        "importance": 0.38,
+        "class": "tourism",
+        "tag": "attraction"
+      },
+      {
+        "name": "teamLab Borderless",
+        "address": "Azabudai Hills, Minato-ku, Tokyo, Japan",
+        "lat": 35.6595,
+        "lon": 139.7413,
+        "osm": { "type": "way", "id": 1189203471, "class": "tourism", "tag": "museum" },
+        "wikidata": null,
+        "wikipedia": "en:teamLab",
+        "importance": 0.44,
+        "class": "tourism",
+        "tag": "museum"
+      }
+    ]
+  },
+
+  "that ramen place near the station": { "candidates": [] }
+}
