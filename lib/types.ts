@@ -172,7 +172,17 @@ export type DraftRow = {
   selectedIndex: number | null;
   decision: DraftDecision | null;
   error?: string;
+  /**
+   * 'prose' rows came from the opt-in free-text scanner and get their candidates
+   * filtered to PLACE_CLASSES before anything is shown — see lib/import/classify.ts.
+   * 'line' rows are something the user typed on purpose and are never second-guessed
+   * by OSM class.
+   */
+  origin: 'line' | 'prose';
 };
+
+/** Cap on rows per import — matches the Nominatim throttle budget, not a UI limit. */
+export const MAX_DRAFT_ROWS = 50;
 
 // ---------------------------------------------------------------------------
 // API contracts — the four route handlers

@@ -1,10 +1,12 @@
 import type { Candidate, DraftRow, ImportDraft } from '@/lib/types';
-import { AUTO_ACCEPT_IMPORTANCE } from '@/lib/types';
+import { classify } from '@/lib/import/classify';
 import recorded from './geocode-responses.json';
 
 /**
- * The M3 "2 places need review" screen, as data. Track I renders this directly;
- * Track C's reducer should be able to produce it from RAW_TEXT + the recorded responses.
+ * The M3 "2 places need review" screen, as data. Track I renders this directly.
+ * Rows go through the same lib/import/classify.ts logic the real draft reducer
+ * uses, so this fixture can never drift from what draftReducer would actually
+ * produce for the same recorded geocode responses.
  */
 
 const RESPONSES = recorded as unknown as Record<string, { candidates: Candidate[] }>;
@@ -19,16 +21,7 @@ export const RAW_TEXT = [
 
 function row(id: string, raw: string): DraftRow {
   const candidates = RESPONSES[raw.toLowerCase()]?.candidates ?? [];
-
-  if (candidates.length === 0) {
-    return { id, raw, state: 'none', candidates, selectedIndex: null, decision: null };
-  }
-  // A lone confident hit is auto-accepted — that is what keeps a 50-row confirm
-  // screen a review rather than data entry.
-  if (candidates.length === 1 && candidates[0].importance >= AUTO_ACCEPT_IMPORTANCE) {
-    return { id, raw, state: 'single', candidates, selectedIndex: 0, decision: 'accept' };
-  }
-  return { id, raw, state: 'multiple', candidates, selectedIndex: null, decision: null };
+  return { id, raw, origin: 'line', ...classify(candidates, false) };
 }
 
 export const SAMPLE_DRAFT: ImportDraft = {
