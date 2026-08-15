@@ -11,7 +11,9 @@ test.describe('dark mode (prefers-color-scheme)', () => {
     await expect(page.locator('body')).toHaveCSS('background-color', LIGHT_BG);
   });
 
-  test('switches to the dark token set with no manual toggle required', async ({ page }) => {
+  test('switches to the dark token set by default, following the OS (no override set)', async ({ page }) => {
+    // A manual toggle now exists (see theme-toggle.spec.ts) — this covers the
+    // untouched 'system' default, which is still driven purely by the OS preference.
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.goto('/dev/fixture/sample');
     await expect(page.locator('body')).toHaveCSS('background-color', DARK_BG);

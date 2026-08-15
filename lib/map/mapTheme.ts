@@ -25,12 +25,13 @@ export const MAP_COLORS: Record<
 };
 
 /**
- * OpenFreeMap's keyless `liberty` style has no dark variant, so a system dark
- * preference without a MapTiler key stays on the light basemap and light
- * route polarity rather than mismatching a dark UI against a light map.
+ * OpenFreeMap's keyless `liberty` style has no dark variant, so the dark UI theme
+ * (system-driven or manually toggled, from lib/hooks/useTheme.ts) without a MapTiler
+ * key stays on the light basemap and light route polarity rather than mismatching a
+ * dark UI against a light map.
  */
-export function resolveMapTheme(prefersDark: boolean, hasMapTilerKey: boolean): MapTheme {
-  return prefersDark && hasMapTilerKey ? 'dark' : 'light';
+export function resolveMapTheme(uiTheme: MapTheme, hasMapTilerKey: boolean): MapTheme {
+  return uiTheme === 'dark' && hasMapTilerKey ? 'dark' : 'light';
 }
 
 export function mapStyleUrl(theme: MapTheme, key: string | undefined): string {

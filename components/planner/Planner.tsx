@@ -24,9 +24,11 @@ type Props = {
     version: number;
   }) => Promise<SaveResult>;
   plans?: { id: string; title: string }[];
+  /** Undefined in fixture mode — there is no signed-in user to show or sign out. */
+  account?: { email: string };
 };
 
-export function Planner({ initialPlan, onSave, plans }: Props) {
+export function Planner({ initialPlan, onSave, plans, account }: Props) {
   const [places, setPlaces] = useState<Place[]>(initialPlan.places);
   const [route, setRoute] = useState<Route | null>(initialPlan.route);
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
@@ -219,6 +221,7 @@ export function Planner({ initialPlan, onSave, plans }: Props) {
         route={route}
         isMobile={isMobile}
         canImport={!!onSave}
+        account={account}
       />
 
       {save.status === 'conflict' && (

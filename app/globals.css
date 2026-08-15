@@ -3,10 +3,13 @@
  * original mockup failed WCAG AA and were replaced. Do not reintroduce #89837a,
  * #8d8880, #D9A13B or #9a6c15 as text or control colours.
  *
- * Dark mode (superseding the old "out of scope for v1" note): auto only, via
- * prefers-color-scheme, per the design turn that introduced it — no manual toggle.
- * The dark hexes below are corrected the same way the light set was: see
- * PLAN.md "Deltas from the design" for the ratios that forced each change.
+ * Dark mode (superseding the old "out of scope for v1" note): a manual toggle
+ * (lib/theme/themeStore.ts) sets `data-theme` on <html> and is the source of truth
+ * once JS has run. The `prefers-color-scheme` media query below is the no-JS/
+ * pre-hydration fallback only, scoped to `:root:not([data-theme])` so it never
+ * fights the manual choice — hence the token list appearing twice; keep both in
+ * sync. The dark hexes are corrected the same way the light set was: see PLAN.md
+ * "Deltas from the design" for the ratios that forced each change.
  */
 :root {
   --bg: #fbfaf9;
@@ -50,8 +53,41 @@
   --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 }
 
+:root[data-theme='dark'] {
+  --bg: #1a1815;
+  --bg-sunken: #1e1b17;
+  --bg-raised: #2b271f;
+  --surface: #26231e;
+  --surface-translucent: rgba(26, 24, 21, 0.86);
+  --map-bg: #15140f;
+
+  --text: #f1ede6;
+  --text-muted: #a8a096; /* 6.1:1 on --surface, 5.8:1 on --bg-raised */
+  --text-subtle: #99917f; /* lifted from the mockup's #8f8879, which fails at 4.22:1 on --bg-raised */
+  --icon-muted: #8f8879;
+  --text-on-accent: #1a1815; /* white-on-accent is 2.5:1 in dark and must not be used */
+
+  /* No -strong variant needed for text in dark: #f08a52 alone passes 6–7:1 on every surface. */
+  --accent: #f08a52;
+  --accent-strong: #f08a52;
+  --accent-strong-hover: #e17f45;
+
+  --border-hairline: #34302a;
+  --border-hairline-strong: #443e36;
+  --border-control: #787268; /* mockup borders are ~1.2:1, decorative only — this is a new dark-specific value for 3:1 */
+
+  --amber-edge: #8a7639; /* lifted from the mockup's #6a5a2d (2.10:1) */
+  --amber-chip-bg: #312a1c;
+  --amber-chip-text: #e9b44c;
+  --pin-ring: var(--bg);
+  --pin-unresolved-bg: #2a251c;
+  --danger-text: #f0806e;
+  --shadow-rgb: 0, 0, 0;
+}
+
+/* No-JS / pre-hydration fallback only — see the comment on the token block above. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme]) {
     --bg: #1a1815;
     --bg-sunken: #1e1b17;
     --bg-raised: #2b271f;
@@ -60,21 +96,20 @@
     --map-bg: #15140f;
 
     --text: #f1ede6;
-    --text-muted: #a8a096; /* 6.1:1 on --surface, 5.8:1 on --bg-raised */
-    --text-subtle: #99917f; /* lifted from the mockup's #8f8879, which fails at 4.22:1 on --bg-raised */
+    --text-muted: #a8a096;
+    --text-subtle: #99917f;
     --icon-muted: #8f8879;
-    --text-on-accent: #1a1815; /* white-on-accent is 2.5:1 in dark and must not be used */
+    --text-on-accent: #1a1815;
 
-    /* No -strong variant needed for text in dark: #f08a52 alone passes 6–7:1 on every surface. */
     --accent: #f08a52;
     --accent-strong: #f08a52;
     --accent-strong-hover: #e17f45;
 
     --border-hairline: #34302a;
     --border-hairline-strong: #443e36;
-    --border-control: #787268; /* mockup borders are ~1.2:1, decorative only — this is a new dark-specific value for 3:1 */
+    --border-control: #787268;
 
-    --amber-edge: #8a7639; /* lifted from the mockup's #6a5a2d (2.10:1) */
+    --amber-edge: #8a7639;
     --amber-chip-bg: #312a1c;
     --amber-chip-text: #e9b44c;
     --pin-ring: var(--bg);

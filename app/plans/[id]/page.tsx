@@ -10,9 +10,10 @@ export default async function PlanPage({ params }: { params: Promise<{ id: strin
 
   // RLS does the ownership filter, so there is no user_id clause here. A plan
   // belonging to someone else simply returns no row.
-  const [{ data: row }, { data: all }] = await Promise.all([
+  const [{ data: row }, { data: all }, { data: userData }] = await Promise.all([
     supabase.from('plans').select('*').eq('id', id).maybeSingle(),
     supabase.from('plans').select('id, title').order('updated_at', { ascending: false }),
+    supabase.auth.getUser(),
   ]);
 
   if (!row) notFound();
@@ -26,6 +27,7 @@ export default async function PlanPage({ params }: { params: Promise<{ id: strin
       initialPlan={planFromRow(row)}
       onSave={savePlan.bind(null, id)}
       plans={(all ?? []) as { id: string; title: string }[]}
+      account={userData.user?.email ? { email: userData.user.email } : undefined}
     />
   );
 }

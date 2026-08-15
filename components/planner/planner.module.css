@@ -46,6 +46,14 @@
   gap: 12px;
   min-width: 0;
 }
+.wordmarkLink {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: inherit;
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+}
 .logo {
   width: 22px;
   height: 22px;
@@ -96,6 +104,10 @@
   border-radius: 50%;
   background: var(--bg-raised);
   border: 1px solid var(--border-hairline-strong);
+  /* Reset for when this class is on a <button> (AccountMenu) rather than the
+     decorative <span> fixture mode uses — buttons don't inherit font by default. */
+  font: inherit;
+  padding: 0;
   font-size: 11px;
   font-weight: 600;
   color: var(--text-subtle);
@@ -386,6 +398,23 @@
   background: var(--bg-sunken);
 }
 
+/* Icon-only header buttons (theme toggle) — same visual language as .mapControls button. */
+.iconButton {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.iconButton:hover {
+  background: var(--bg-sunken);
+}
+
 .item[data-dragging='true'] .card {
   box-shadow: 0 12px 28px -10px rgba(var(--shadow-rgb), 0.4);
   opacity: 0.95;
@@ -452,6 +481,13 @@
   border: 0;
   border-top: 1px solid var(--border-hairline);
 }
+.menuIdentity {
+  margin: 4px 10px 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  overflow-wrap: break-word;
+}
 .menuDanger {
   color: var(--danger-text);
 }
@@ -461,6 +497,28 @@
   font-weight: 400;
   color: var(--text-subtle);
   margin-top: 2px;
+}
+
+.themeFieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.themeOption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.themeOption:hover {
+  background: var(--bg-sunken);
 }
 
 /* --- undo --------------------------------------------------------------- */
@@ -708,7 +766,8 @@
 @media (max-width: 767px) {
   /* Bigger targets where the card is narrowest. */
   .grip,
-  .actionsTrigger {
+  .actionsTrigger,
+  .iconButton {
     width: 44px;
     height: 44px;
   }
@@ -732,7 +791,17 @@
     padding: 0 12px;
     gap: 8px;
   }
-  .wordmark,
+  /* The wordmark TEXT hides, but .wordmarkLink stays — it's the only in-app way
+     back to /plans on mobile now that .ghost "All plans" is also hidden. The link's
+     aria-label keeps the accessible name stable even with the text gone. Padding
+     pads the 22px logo mark out to a 44px hit area without growing it visually. */
+  .wordmark {
+    display: none;
+  }
+  .wordmarkLink {
+    padding: 11px;
+    margin: -11px;
+  }
   .ghost {
     display: none;
   }

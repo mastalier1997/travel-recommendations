@@ -19,5 +19,7 @@ export default async function DevFixturePage({ params }: { params: Promise<{ nam
   const plan = FIXTURES[name as keyof typeof FIXTURES];
   if (!plan) notFound();
 
-  return <Planner initialPlan={plan} />;
+  // Stub identity only — onSave/plans stay unset, nothing persists. This exists so
+  // the account menu (and its axe coverage) is exercisable with no real Supabase user.
+  return <Planner initialPlan={plan} account={{ email: 'dev@example.com' }} />;
 }

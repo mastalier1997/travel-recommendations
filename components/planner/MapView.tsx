@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import maplibregl, { type LngLatBoundsLike } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Place, Route } from '@/lib/types';
-import { usePrefersDark } from '@/lib/hooks/useMediaQuery';
+import { useResolvedTheme } from '@/lib/hooks/useTheme';
 import { MAP_COLORS, mapStyleUrl, resolveMapTheme } from '@/lib/map/mapTheme';
 import styles from './planner.module.css';
 
@@ -43,8 +43,8 @@ export function MapView({
   const onSelectRef = useRef(onSelectStop);
   onSelectRef.current = onSelectStop;
 
-  const prefersDark = usePrefersDark();
-  const mapTheme = resolveMapTheme(prefersDark, Boolean(KEY));
+  const uiTheme = useResolvedTheme();
+  const mapTheme = resolveMapTheme(uiTheme, Boolean(KEY));
   const styleUrl = mapStyleUrl(mapTheme, KEY);
   const appliedStyleRef = useRef(styleUrl);
   // Reattaching the route layers is route-effect's job; style.load (fired on

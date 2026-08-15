@@ -1,4 +1,5 @@
 import { LoginForm } from './LoginForm';
+import { AutoFocusH1 } from './AutoFocusH1';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import styles from './login.module.css';
 
@@ -13,7 +14,7 @@ export default async function LoginPage({
 
   return (
     <main className={styles.wrap}>
-      <h1 className={styles.title}>Sign in to Wanderlist</h1>
+      <AutoFocusH1 className={styles.title}>Sign in to Wanderlist</AutoFocusH1>
       {isSupabaseConfigured ? (
         <>
           <LoginForm next={next ?? '/plans'} />

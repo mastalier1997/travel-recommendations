@@ -26,7 +26,11 @@ export function CardActions({ name, index, total, onMove, onMoveTo, onRemove }: 
   const ref = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  const close = () => ref.current?.hidePopover();
+  // hidePopover() alone can drop focus to <body> — return it to the trigger.
+  const close = () => {
+    ref.current?.hidePopover();
+    triggerRef.current?.focus();
+  };
 
   // Anchor positioning (`anchor()`) is not portable yet, so place it by hand on open.
   const position = () => {

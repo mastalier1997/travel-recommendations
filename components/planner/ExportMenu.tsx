@@ -57,7 +57,9 @@ export function ExportMenu({ title, places, route, isMobile }: Props) {
     const content = GENERATE[format]({ title, places, route });
     downloadText(filename, MIME[format], content);
     setAnnouncement(`Downloading ${filename}`);
+    // hidePopover() alone can drop focus to <body> — return it to the trigger.
     ref.current?.hidePopover();
+    triggerRef.current?.focus();
   };
 
   const kmlOption = (

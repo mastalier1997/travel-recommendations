@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import type { SaveStatus } from '@/lib/hooks/useAutosave';
 import type { Place, Route } from '@/lib/types';
 import { ExportMenu } from './ExportMenu';
+import { ThemeToggle } from './ThemeToggle';
+import { AccountMenu } from './AccountMenu';
 import styles from './planner.module.css';
 
 type Props = {
@@ -18,6 +20,8 @@ type Props = {
   isMobile: boolean;
   /** False in fixture mode — there is no real plan row to import into. */
   canImport: boolean;
+  /** Undefined in fixture mode — there is no signed-in user to show or sign out. */
+  account?: { email: string };
 };
 
 const SAVE_LABEL: Record<SaveStatus, string> = {
@@ -48,6 +52,7 @@ export function Header({
   route,
   isMobile,
   canImport,
+  account,
 }: Props) {
   const router = useRouter();
   const options = plans?.length ? plans : [{ id: currentId ?? 'current', title }];
@@ -55,8 +60,12 @@ export function Header({
   return (
     <header className={styles.header}>
       <div className={styles.headerLeft}>
-        <span className={styles.logo} aria-hidden="true" />
-        <span className={styles.wordmark}>Wanderlist</span>
+        {/* aria-label keeps the accessible name stable even though .wordmark's text
+            is display:none below 768px — the logo mark alone is the mobile tap target. */}
+        <Link href="/" className={styles.wordmarkLink} aria-label="Wanderlist — home">
+          <span className={styles.logo} aria-hidden="true" />
+          <span className={styles.wordmark}>Wanderlist</span>
+        </Link>
 
         <label className="sr-only" htmlFor="plan-switcher">
           Current plan
@@ -104,9 +113,14 @@ export function Header({
           </Link>
         )}
         <ExportMenu title={title} places={places} route={route} isMobile={isMobile} />
-        <span className={styles.avatar} aria-hidden="true">
-          MK
-        </span>
+        <ThemeToggle />
+        {account ? (
+          <AccountMenu email={account.email} />
+        ) : (
+          <span className={styles.avatar} aria-hidden="true">
+            ··
+          </span>
+        )}
       </div>
     </header>
   );
