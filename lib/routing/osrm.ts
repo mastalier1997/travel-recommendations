@@ -1,4 +1,5 @@
 import type { Route, RouteLeg, TravelMode } from '@/lib/types';
+import { solveOrder } from './solve';
 
 const OSRM_URL = process.env.OSRM_URL ?? 'https://router.project-osrm.org';
 
@@ -92,6 +93,7 @@ export function toTripResult(
       mode: opts.mode,
       roundTrip: opts.roundTrip,
       optimized: true,
+      optimizationMethod: 'exact',
       legs,
       totalDistanceM: trip.distance,
       totalDurationS: trip.duration,
@@ -110,13 +112,17 @@ export function toTripResult(
 export async function requestRoute(
   stops: { id: string; lat: number; lon: number }[],
   opts: { mode: TravelMode; roundTrip: boolean },
+  signal?: AbortSignal,
 ): Promise<OsrmTripResult> {
-  const coords = stops.map((s) => `${s.lon},${s.lat}`).join(';');
+  // /route has no roundtrip concept of its own — get the closing leg by literally
+  // repeating the first stop's coordinates as the last waypoint.
+  const closing = opts.roundTrip && stops.length > 1 ? [stops[0]] : [];
+  const coords = [...stops, ...closing].map((s) => `${s.lon},${s.lat}`).join(';');
   const url = new URL(`/route/v1/${opts.mode}/${coords}`, OSRM_URL);
   url.searchParams.set('geometries', 'geojson');
   url.searchParams.set('overview', 'full');
 
-  const res = await fetch(url);
+  const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`OSRM responded ${res.status}`);
   const data = (await res.json()) as OsrmRouteResponse;
   return toRouteResult(stops, data, opts);
@@ -133,9 +139,12 @@ export function toRouteResult(
 
   const order = stops.map((s) => s.id);
   const solved = data.routes[0];
+  // Modulo, not a plain `+1`: with `roundTrip`, the closing coordinate above gives
+  // OSRM one more leg than `order` has entries — this wraps that last leg's `toId`
+  // back to order[0] instead of reading past the end of the array.
   const legs: RouteLeg[] = solved.legs.map((leg, i) => ({
     fromId: order[i],
-    toId: order[i + 1],
+    toId: order[(i + 1) % order.length],
     distanceM: leg.distance,
     durationS: leg.duration,
   }));
@@ -148,11 +157,80 @@ export function toRouteResult(
       mode: opts.mode,
       roundTrip: opts.roundTrip,
       optimized: false,
+      optimizationMethod: 'none',
       legs,
       totalDistanceM: solved.distance,
       totalDurationS: solved.duration,
       geometry: solved.geometry,
       computedAt: new Date().toISOString(),
     },
+  };
+}
+
+/** Shape of OSRM's /table response — an NxN duration/distance matrix, no permutation
+ * search on OSRM's side (unlike /trip), which is what makes it cheap enough to use
+ * above OSRM_TRIP_MAX_STOPS. */
+type OsrmTableResponse = {
+  code: string;
+  durations?: (number | null)[][];
+  distances?: (number | null)[][];
+};
+
+export type OsrmTableResult = { durations: number[][]; distances: number[][] };
+
+export async function requestTable(
+  stops: { id: string; lat: number; lon: number }[],
+  opts: { mode: TravelMode },
+  signal?: AbortSignal,
+): Promise<OsrmTableResult> {
+  const coords = stops.map((s) => `${s.lon},${s.lat}`).join(';');
+  const url = new URL(`/table/v1/${opts.mode}/${coords}`, OSRM_URL);
+  url.searchParams.set('annotations', 'duration,distance');
+
+  const res = await fetch(url, { signal });
+  if (!res.ok) throw new Error(`OSRM responded ${res.status}`);
+  const data = (await res.json()) as OsrmTableResponse;
+  return toTableResult(data);
+}
+
+export function toTableResult(data: OsrmTableResponse): OsrmTableResult {
+  if (data.code !== 'Ok' || !data.durations || !data.distances) {
+    throw new Error(`OSRM table failed: ${data.code}`);
+  }
+  // A pair OSRM can't route between at all comes back null — treat it as "very
+  // far" so the solver's comparisons stay well-defined instead of NaN-poisoning.
+  const clean = (row: (number | null)[]) => row.map((v) => v ?? Number.MAX_SAFE_INTEGER);
+  return {
+    durations: data.durations.map(clean),
+    distances: data.distances.map(clean),
+  };
+}
+
+/**
+ * Above OSRM_TRIP_MAX_STOPS: get a cheap distance matrix via /table, solve the
+ * order locally (lib/routing/solve.ts — nearest-neighbor + 2-opt), then one /route
+ * call on the solved order for real turn-by-turn geometry and authoritative totals.
+ * The matrix only picks an order; /route's numbers are what the UI actually shows.
+ */
+export async function requestSolvedRoute(
+  stops: { id: string; lat: number; lon: number }[],
+  opts: { mode: TravelMode; roundTrip: boolean; fixFirst?: boolean; fixLast?: boolean },
+): Promise<OsrmTripResult> {
+  // Two sequential demo-server round trips instead of one — bound the total, not
+  // just each call, so a slow/stuck demo server still yields the caller's clean
+  // 502 instead of the platform's own timeout with no error body.
+  const signal = AbortSignal.timeout(8000);
+  const table = await requestTable(stops, { mode: opts.mode }, signal);
+  const order = solveOrder(table.durations, {
+    roundTrip: opts.roundTrip,
+    fixFirst: opts.fixFirst,
+    fixLast: opts.fixLast,
+  });
+  const solvedStops = order.map((i) => stops[i]);
+
+  const { route } = await requestRoute(solvedStops, { mode: opts.mode, roundTrip: opts.roundTrip }, signal);
+  return {
+    order: solvedStops.map((s) => s.id),
+    route: { ...route, optimized: true, optimizationMethod: 'heuristic' },
   };
 }

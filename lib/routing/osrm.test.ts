@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toTripResult, toRouteResult } from './osrm';
+import { toTripResult, toRouteResult, toTableResult } from './osrm';
 
 const stop = (id: string, lat: number, lon: number) => ({ id, lat, lon });
 
@@ -120,5 +120,55 @@ describe('toRouteResult', () => {
     expect(() =>
       toRouteResult(stops, { code: 'NoRoute' }, { mode: 'driving', roundTrip: false }),
     ).toThrow(/NoRoute/);
+  });
+
+  it('wraps the closing leg back to the first stop on a round trip', () => {
+    // requestRoute appends stop 0's coordinates again for roundTrip, so OSRM
+    // returns one more leg (3) than `order` has entries (3 stops) — the last
+    // leg's toId must wrap via modulo, not read order[3] (undefined).
+    const stops = [stop('a', 1, 1), stop('b', 2, 2), stop('c', 3, 3)];
+    const { route } = toRouteResult(stops, okRouteResponse(3), { mode: 'driving', roundTrip: true });
+    expect(route.legs).toEqual([
+      { fromId: 'a', toId: 'b', distanceM: 100, durationS: 60 },
+      { fromId: 'b', toId: 'c', distanceM: 200, durationS: 120 },
+      { fromId: 'c', toId: 'a', distanceM: 300, durationS: 180 },
+    ]);
+  });
+});
+
+describe('toTableResult', () => {
+  const okTableResponse = () => ({
+    code: 'Ok',
+    durations: [
+      [0, 60, 120],
+      [60, 0, 90],
+      [120, 90, 0],
+    ],
+    distances: [
+      [0, 1000, 2000],
+      [1000, 0, 1500],
+      [2000, 1500, 0],
+    ],
+  });
+
+  it('returns the duration/distance matrices as-is when every pair is reachable', () => {
+    const result = toTableResult(okTableResponse());
+    expect(result.durations).toEqual([
+      [0, 60, 120],
+      [60, 0, 90],
+      [120, 90, 0],
+    ]);
+    expect(result.distances[0][2]).toBe(2000);
+  });
+
+  it('replaces an unreachable (null) pair with a very large cost instead of null', () => {
+    const data = okTableResponse();
+    data.durations[0][2] = null as unknown as number;
+    const result = toTableResult(data);
+    expect(result.durations[0][2]).toBe(Number.MAX_SAFE_INTEGER);
+  });
+
+  it('throws when OSRM returns a non-Ok code', () => {
+    expect(() => toTableResult({ code: 'NoTable' })).toThrow(/NoTable/);
   });
 });

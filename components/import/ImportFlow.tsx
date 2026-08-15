@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Place } from '@/lib/types';
-import { MAX_STOPS_PER_ROUTE } from '@/lib/types';
+import { MAX_STOPS_SOLVED } from '@/lib/types';
 import type { SaveResult } from '@/lib/plan/saveState';
 import { useImportDraft } from '@/lib/import/useImportDraft';
 import { ImportScreen } from './ImportScreen';
@@ -67,8 +67,8 @@ export function ImportFlow({ planId, version, existingPlaceCount, onCommit }: Pr
     (r) => r.decision === 'accept' || r.decision === 'keep-unresolved',
   ).length;
   const capWarning =
-    existingPlaceCount + decidedCount > MAX_STOPS_PER_ROUTE
-      ? `This plan will have ${existingPlaceCount + decidedCount} stops — order auto-optimizes up to ${MAX_STOPS_PER_ROUTE}; this trip will route in whatever order you leave it.`
+    existingPlaceCount + decidedCount > MAX_STOPS_SOLVED
+      ? `This plan will have ${existingPlaceCount + decidedCount} stops — order auto-optimizes up to ${MAX_STOPS_SOLVED}; this trip will route in whatever order you leave it.`
       : null;
 
   return (

@@ -332,7 +332,9 @@
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: var(--accent);
+  /* --accent + --text-on-accent is 4.04:1, fails 4.5:1 (documented in globals.css's
+     token comments) — --accent-strong is the one that's actually meant for text/fills. */
+  background: var(--accent-strong);
   color: var(--text-on-accent);
   font-size: 11px;
   font-weight: 600;
@@ -734,7 +736,8 @@
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: var(--accent);
+  /* Same fix as .badge: --accent + white text fails 4.05:1, --accent-strong passes. */
+  background: var(--accent-strong);
   color: var(--text-on-accent);
   font-family: var(--font-sans);
   font-size: 11px;

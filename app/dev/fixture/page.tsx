@@ -4,6 +4,7 @@ const FIXTURES: { slug: string; label: string }[] = [
   { slug: 'sample', label: 'Sample plan — Kyoto + Osaka, 9 stops' },
   { slug: 'single-area', label: 'Single area — Kyoto only, 5 stops' },
   { slug: 'multi-country', label: 'Multi-country — Austria + Germany, 8 stops' },
+  { slug: 'large-trip', label: 'Large trip — Kansai, 15 stops (heuristic solve)' },
 ];
 
 // ponytail: dev-only index of the fixture-preview routes, same NODE_ENV gate as

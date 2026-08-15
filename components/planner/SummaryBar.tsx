@@ -1,7 +1,7 @@
 'use client';
 
 import type { Place, Route } from '@/lib/types';
-import { MAX_STOPS_PER_ROUTE } from '@/lib/types';
+import { MAX_STOPS_SOLVED } from '@/lib/types';
 import {
   formatDistance,
   formatDistanceSpoken,
@@ -20,9 +20,10 @@ type Props = {
 
 export function SummaryBar({ places, route, routeStale, onOptimize, busy }: Props) {
   const needsReview = places.filter((p) => p.status === 'unresolved').length;
-  // Above the cap, order auto-optimize (OSRM /trip) is off the table, but routing the
-  // stops in their current order isn't — see app/api/optimize/route.ts.
-  const overCap = places.length > MAX_STOPS_PER_ROUTE;
+  // Below this, order-solving always happens — exactly (OSRM /trip) under 12 stops,
+  // heuristically (lib/routing/solve.ts) up to this cap. That distinction is
+  // deliberately invisible here — see app/api/optimize/route.ts.
+  const overCap = places.length > MAX_STOPS_SOLVED;
   const actionLabel = busy
     ? overCap
       ? 'Routing…'
@@ -55,12 +56,12 @@ export function SummaryBar({ places, route, routeStale, onOptimize, busy }: Prop
 
         <p className={styles.summaryNote}>
           {overCap
-            ? `Order auto-optimizes up to ${MAX_STOPS_PER_ROUTE} stops — this trip routes in its current order`
-            : `${MAX_STOPS_PER_ROUTE} stops max per auto-optimize`}
+            ? `Order auto-optimizes up to ${MAX_STOPS_SOLVED} stops — this trip routes in its current order`
+            : `${MAX_STOPS_SOLVED} stops max per auto-optimize`}
         </p>
       </div>
 
-      <div className={styles.summaryActions}>
+      <div className={styles.summaryActions} aria-busy={busy}>
         {needsReview > 0 && (
           <span className={styles.chip}>
             {needsReview} need{needsReview === 1 ? 's' : ''} review

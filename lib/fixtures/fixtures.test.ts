@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { Plan } from '@/lib/types';
-import { MAX_STOPS_PER_ROUTE } from '@/lib/types';
+import { OSRM_TRIP_MAX_STOPS } from '@/lib/types';
 import { isRouteStale } from '@/lib/routing/order';
 import { SAMPLE_PLAN } from './sample-plan';
 import { SINGLE_AREA_PLAN } from './single-area-plan';
@@ -19,8 +19,10 @@ const PLANS: [string, Plan][] = [
 ];
 
 describe.each(PLANS)('%s', (_name, plan) => {
-  it(`has at most ${MAX_STOPS_PER_ROUTE} places`, () => {
-    expect(plan.places.length).toBeLessThanOrEqual(MAX_STOPS_PER_ROUTE);
+  it(`has at most ${OSRM_TRIP_MAX_STOPS} places`, () => {
+    // These are small demo fixtures, meant to be exactly-solvable via OSRM's own
+    // /trip — not exercising the heuristic solver's much larger MAX_STOPS_SOLVED cap.
+    expect(plan.places.length).toBeLessThanOrEqual(OSRM_TRIP_MAX_STOPS);
   });
 
   it('gives every confirmed place non-null coordinates', () => {

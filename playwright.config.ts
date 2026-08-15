@@ -20,5 +20,10 @@ export default defineConfig({
     url: 'http://localhost:3000/dev/fixture',
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,
+    // Force MOCK regardless of the developer's local .env.local — e2e specs that
+    // click "Optimize route" need deterministic, network-free /api responses
+    // (lib/routing/solve.ts's real heuristic still runs, just on a haversine
+    // matrix instead of OSRM's /table — see app/api/optimize/route.ts's MOCK branch).
+    env: { MOCK: '1' },
   },
 });

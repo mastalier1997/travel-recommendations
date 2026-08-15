@@ -110,8 +110,17 @@ export const PLACE_CLASSES = [
 
 export type TravelMode = 'driving' | 'walking' | 'cycling';
 
-/** OSRM /trip caps waypoints. Above this the UI must refuse and say why. */
-export const MAX_STOPS_PER_ROUTE = 12;
+/** OSRM /trip's own exact TSP solver caps waypoints here — above this, order-solving
+ * switches to the heuristic in lib/routing/solve.ts (nearest-neighbor + 2-opt) instead
+ * of refusing. Purely an internal "exact vs heuristic" threshold — never shown to users,
+ * see MAX_STOPS_SOLVED for the cap that actually matters to them. */
+export const OSRM_TRIP_MAX_STOPS = 12;
+
+/** OSRM's /table endpoint (what the heuristic solver needs for its distance matrix)
+ * caps coordinates here — verified live against the public demo server: 100 succeeds,
+ * 101 returns {"code":"TooBig"}. Above this, order-solving is refused and the plan
+ * routes in whatever order it's already in (today's pre-existing fallback). */
+export const MAX_STOPS_SOLVED = 100;
 
 export type Route = {
   version: 1;
@@ -120,6 +129,10 @@ export type Route = {
   roundTrip: boolean;
   /** false once the user drags a card — the order is theirs now, not the solver's. */
   optimized: boolean;
+  /** How `optimized` was achieved — exact (OSRM /trip) vs heuristic (solve.ts) vs none
+   * (left as given). Internal/test value: the UI intentionally renders exact and
+   * heuristic identically, users only care whether their order changed. */
+  optimizationMethod?: 'exact' | 'heuristic' | 'none';
   /**
    * Stable hash of the place ids in order + mode + roundTrip. Recompute from `places` on
    * render; a mismatch means this route is stale — grey the polyline, offer "Re-route".
