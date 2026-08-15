@@ -43,6 +43,10 @@ export type Place = {
   notes: string | null;
   origin: 'line' | 'prose' | 'manual' | 'map-click';
   addedAt: string;
+  /** ISO 3166-1 alpha-2, set at geocode time. Optional/null until every geocoder ladder rung
+   * fills it in — only consumed by country grouping (lib/plan/groupByCountry.ts), nothing load-bearing
+   * depends on it being present. */
+  countryCode?: string | null;
 };
 
 export type OsmRef = {
@@ -127,6 +131,9 @@ export type Route = {
   totalDurationS: number;
   geometry: GeoJsonLineString;
   computedAt: string;
+  /** True when this geometry is a zoom-simplified generalization, not turn-by-turn shape
+   * (continental-scale trips) — the map/list should say so, never imply it's precise. */
+  generalized?: boolean;
 };
 
 export type RouteLeg = {
@@ -134,6 +141,9 @@ export type RouteLeg = {
   toId: string;
   distanceM: number;
   durationS: number;
+  /** Defaults to the route's own `mode` when absent. Set per-leg for a non-driving
+   * segment (e.g. a ferry) that the road-network mode can't represent. */
+  mode?: TravelMode | 'ferry';
 };
 
 export type GeoJsonLineString = {

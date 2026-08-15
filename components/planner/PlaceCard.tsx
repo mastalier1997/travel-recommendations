@@ -12,8 +12,11 @@ type Props = {
   place: Place;
   index: number;
   total: number;
-  /** Leg arriving at this stop. Absent on the first stop. */
+  /** Leg arriving at this stop. Absent on the first stop, and on a country group's
+   * first stop — that leg is shown once, as the group's border/ferry row instead. */
   leg?: { leg: RouteLeg; fromName: string };
+  /** True when this is the single longest leg in the whole route (continental scale). */
+  legIsLongest?: boolean;
   selected: boolean;
   stale: boolean;
   onSelect: (id: string) => void;
@@ -21,6 +24,9 @@ type Props = {
   onMoveTo: (index: number, to: number) => void;
   onRemove: (index: number) => void;
   cardRef?: (el: HTMLButtonElement | null) => void;
+  /** True while a list filter is active — dragging a gapped view is confusing, so the
+   * grip is disabled (the actions menu's "Move to position" still works, unaffected). */
+  dragDisabled?: boolean;
 };
 
 function categoryLabel(place: Place): string | null {
@@ -38,6 +44,7 @@ export function PlaceCard({
   index,
   total,
   leg,
+  legIsLongest,
   selected,
   stale,
   onSelect,
@@ -45,9 +52,11 @@ export function PlaceCard({
   onMoveTo,
   onRemove,
   cardRef,
+  dragDisabled,
 }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: place.id,
+    disabled: dragDisabled,
   });
 
   const unresolved = place.status === 'unresolved';
@@ -70,6 +79,7 @@ export function PlaceCard({
           <span className={styles.legRule} aria-hidden="true" />
           {formatDistance(leg.leg.distanceM)} · {formatDurationShort(leg.leg.durationS)} from{' '}
           {leg.fromName}
+          {legIsLongest && ' · Longest leg'}
         </p>
       )}
 

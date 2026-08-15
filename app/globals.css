@@ -3,18 +3,24 @@
  * original mockup failed WCAG AA and were replaced. Do not reintroduce #89837a,
  * #8d8880, #D9A13B or #9a6c15 as text or control colours.
  *
- * Light only, on purpose. Dark mode is out of scope for v1.
+ * Dark mode (superseding the old "out of scope for v1" note): auto only, via
+ * prefers-color-scheme, per the design turn that introduced it — no manual toggle.
+ * The dark hexes below are corrected the same way the light set was: see
+ * PLAN.md "Deltas from the design" for the ratios that forced each change.
  */
 :root {
   --bg: #fbfaf9;
   --bg-sunken: #f7f6f3;
   --bg-raised: #f6f4f1;
   --surface: #ffffff;
+  --surface-translucent: rgba(255, 255, 255, 0.82);
+  --map-bg: #e2e6dc;
 
   --text: #26221e;
   --text-muted: #726c64; /* 13px descriptions — 4.80:1 on --bg-sunken */
   --text-subtle: #6f6960; /* 11px metadata */
   --icon-muted: #8d8880; /* NON-TEXT ONLY — fails 4.5:1 as text */
+  --text-on-accent: #ffffff; /* text/icons drawn on a filled --accent surface */
 
   --accent: #c2643f; /* map pins, route polyline, type >= 24px only */
   --accent-strong: #af5430; /* all accent text, links, primary button fill */
@@ -27,6 +33,10 @@
   --amber-edge: #b8801f;
   --amber-chip-bg: #fbf1dc;
   --amber-chip-text: #8a5f0f;
+  --pin-ring: #ffffff;
+  --pin-unresolved-bg: #ffffff;
+  --danger-text: #96331f;
+  --shadow-rgb: 40, 34, 28;
 
   --radius-sm: 4px;
   --radius: 8px;
@@ -40,6 +50,40 @@
   --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 }
 
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a1815;
+    --bg-sunken: #1e1b17;
+    --bg-raised: #2b271f;
+    --surface: #26231e;
+    --surface-translucent: rgba(26, 24, 21, 0.86);
+    --map-bg: #15140f;
+
+    --text: #f1ede6;
+    --text-muted: #a8a096; /* 6.1:1 on --surface, 5.8:1 on --bg-raised */
+    --text-subtle: #99917f; /* lifted from the mockup's #8f8879, which fails at 4.22:1 on --bg-raised */
+    --icon-muted: #8f8879;
+    --text-on-accent: #1a1815; /* white-on-accent is 2.5:1 in dark and must not be used */
+
+    /* No -strong variant needed for text in dark: #f08a52 alone passes 6–7:1 on every surface. */
+    --accent: #f08a52;
+    --accent-strong: #f08a52;
+    --accent-strong-hover: #e17f45;
+
+    --border-hairline: #34302a;
+    --border-hairline-strong: #443e36;
+    --border-control: #787268; /* mockup borders are ~1.2:1, decorative only — this is a new dark-specific value for 3:1 */
+
+    --amber-edge: #8a7639; /* lifted from the mockup's #6a5a2d (2.10:1) */
+    --amber-chip-bg: #312a1c;
+    --amber-chip-text: #e9b44c;
+    --pin-ring: var(--bg);
+    --pin-unresolved-bg: #2a251c;
+    --danger-text: #f0806e;
+    --shadow-rgb: 0, 0, 0;
+  }
+}
+
 *,
 *::before,
 *::after {
@@ -47,7 +91,7 @@
 }
 
 html {
-  color-scheme: light;
+  color-scheme: light dark;
 }
 
 body {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toTripResult } from './osrm';
+import { toTripResult, toRouteResult } from './osrm';
 
 const stop = (id: string, lat: number, lon: number) => ({ id, lat, lon });
 
@@ -73,5 +73,52 @@ describe('toTripResult', () => {
     expect(() =>
       toTripResult(stops, { code: 'NoTrip' }, { mode: 'driving', roundTrip: false }),
     ).toThrow(/NoTrip/);
+  });
+});
+
+const okRouteResponse = (legCount: number) => ({
+  code: 'Ok',
+  routes: [
+    {
+      distance: 5940000,
+      duration: 246300,
+      legs: Array.from({ length: legCount }, (_, i) => ({ distance: 100 * (i + 1), duration: 60 * (i + 1) })),
+      geometry: {
+        type: 'LineString' as const,
+        coordinates: [[135.77, 34.97], [135.78, 34.98]] as [number, number][],
+      },
+    },
+  ],
+});
+
+describe('toRouteResult', () => {
+  it('never reorders — order is always the given input order', () => {
+    const stops = [stop('a', 1, 1), stop('b', 2, 2), stop('c', 3, 3)];
+    const { order } = toRouteResult(stops, okRouteResponse(2), { mode: 'driving', roundTrip: false });
+    expect(order).toEqual(['a', 'b', 'c']);
+  });
+
+  it('builds legs against the input ids, in input order', () => {
+    const stops = [stop('a', 1, 1), stop('b', 2, 2), stop('c', 3, 3)];
+    const { route } = toRouteResult(stops, okRouteResponse(2), { mode: 'driving', roundTrip: false });
+    expect(route.legs).toEqual([
+      { fromId: 'a', toId: 'b', distanceM: 100, durationS: 60 },
+      { fromId: 'b', toId: 'c', distanceM: 200, durationS: 120 },
+    ]);
+  });
+
+  it('marks the route unoptimized', () => {
+    const stops = [stop('a', 1, 1), stop('b', 2, 2)];
+    const { route } = toRouteResult(stops, okRouteResponse(1), { mode: 'driving', roundTrip: false });
+    expect(route.optimized).toBe(false);
+    expect(route.totalDistanceM).toBe(5940000);
+    expect(route.totalDurationS).toBe(246300);
+  });
+
+  it('throws when OSRM returns a non-Ok code', () => {
+    const stops = [stop('a', 1, 1), stop('b', 2, 2)];
+    expect(() =>
+      toRouteResult(stops, { code: 'NoRoute' }, { mode: 'driving', roundTrip: false }),
+    ).toThrow(/NoRoute/);
   });
 });

@@ -4,7 +4,8 @@ Trip route planner. Import places → map + list → optimize route → drag to 
 **Hard constraint: no LLM at runtime.** Descriptions and routing are deterministic APIs/algorithms.
 
 Design source: `claude.ai/design/p/11d19f72-1b1c-4f88-8d10-1b714726625a` — 6 screens
-(Planner 1440×900, Export popover, mobile M1–M4 at 390×844).
+(Planner 1440×900, Export popover, mobile M1–M4 at 390×844), plus a later "Turn 2"
+addition: dark mode and a continental/multi-country scale view (see below).
 
 ---
 
@@ -296,6 +297,22 @@ VoiceOver iOS at B, G, I · 400% zoom / 320px reflow · `forced-colors: active` 
 4. **Token colour corrections** — closest-compliant values, look preserved.
 5. **Undo** after remove (10s, in the status region).
 6. **12-stop cap** messaging in the summary bar.
+
+## Dark mode & continental scale (Turn 2)
+
+Supersedes the old "dark mode is out of scope for v1" note in `app/globals.css`. `prefers-color-scheme`
+only — the design has no manual toggle. Dark tokens live alongside the light set in `globals.css`,
+corrected against the mockup's hexes the same way the light set was (several needed lifting for AA —
+see the token comments). Map paint colours are threaded in separately via `lib/map/mapTheme.ts` since
+MapLibre reads JS, not CSS custom properties; the keyless OpenFreeMap fallback has no dark tile style,
+so a dark OS preference without a MapTiler key stays on the light basemap.
+
+Continental scale (23-stop, 7-country trip) needs a routing decision first: OSRM's `/trip` cap is
+12 stops (`MAX_STOPS_PER_ROUTE`, enforced in `app/api/optimize/route.ts`), so anything larger routes
+via chunked `/route` calls at fixed order — no re-optimization above the cap. Country grouping,
+sticky headers, and per-country subtotals are derived (`lib/plan/groupByCountry.ts`), not persisted;
+`Place.countryCode` (set at geocode time) and `RouteLeg.mode` (for ferry/non-driving legs) are the
+only new persisted fields.
 
 ## Explicitly out of scope for v1
 

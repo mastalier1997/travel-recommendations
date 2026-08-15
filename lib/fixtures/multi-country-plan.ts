@@ -30,6 +30,7 @@ export const MULTI_COUNTRY_PLACES: Place[] = [
   place({
     id: 'pl_at_vienna',
     addedAt: AT,
+    countryCode: 'AT',
     name: "St. Stephen's Cathedral",
     lat: 48.2085,
     lon: 16.3735,
@@ -47,6 +48,7 @@ export const MULTI_COUNTRY_PLACES: Place[] = [
   place({
     id: 'pl_at_melk',
     addedAt: AT,
+    countryCode: 'AT',
     name: 'Melk Abbey',
     lat: 48.2281,
     lon: 15.3336,
@@ -64,6 +66,7 @@ export const MULTI_COUNTRY_PLACES: Place[] = [
   place({
     id: 'pl_at_hallstatt',
     addedAt: AT,
+    countryCode: 'AT',
     name: 'Hallstatt',
     lat: 47.5622,
     lon: 13.6493,
@@ -81,6 +84,7 @@ export const MULTI_COUNTRY_PLACES: Place[] = [
   place({
     id: 'pl_at_salzburg',
     addedAt: AT,
+    countryCode: 'AT',
     name: 'Hohensalzburg Fortress',
     lat: 47.795,
     lon: 13.047,
@@ -100,6 +104,7 @@ export const MULTI_COUNTRY_PLACES: Place[] = [
   place({
     id: 'pl_de_koenigssee',
     addedAt: AT,
+    countryCode: 'DE',
     name: 'Königssee',
     lat: 47.5877,
     lon: 12.988,
@@ -111,6 +116,7 @@ export const MULTI_COUNTRY_PLACES: Place[] = [
   place({
     id: 'pl_de_munich',
     addedAt: AT,
+    countryCode: 'DE',
     name: 'Marienplatz',
     lat: 48.1374,
     lon: 11.5755,
@@ -130,6 +136,7 @@ export const MULTI_COUNTRY_PLACES: Place[] = [
   place({
     id: 'pl_de_neuschwanstein',
     addedAt: AT,
+    countryCode: 'DE',
     name: 'Neuschwanstein Castle',
     lat: 47.5576,
     lon: 10.7498,
@@ -148,6 +155,7 @@ export const MULTI_COUNTRY_PLACES: Place[] = [
   place({
     id: 'pl_at_innsbruck',
     addedAt: AT,
+    countryCode: 'AT',
     name: 'Innsbruck',
     lat: 47.2683,
     lon: 11.3933,

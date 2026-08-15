@@ -68,7 +68,7 @@ export function ImportFlow({ planId, version, existingPlaceCount, onCommit }: Pr
   ).length;
   const capWarning =
     existingPlaceCount + decidedCount > MAX_STOPS_PER_ROUTE
-      ? `This plan will have ${existingPlaceCount + decidedCount} stops — routes are capped at ${MAX_STOPS_PER_ROUTE}.`
+      ? `This plan will have ${existingPlaceCount + decidedCount} stops — order auto-optimizes up to ${MAX_STOPS_PER_ROUTE}; this trip will route in whatever order you leave it.`
       : null;
 
   return (

@@ -120,7 +120,7 @@
   flex: 1;
   min-width: 0;
   position: relative;
-  background: #e2e6dc;
+  background: var(--map-bg);
 }
 .mapCanvas {
   position: absolute;
@@ -160,7 +160,7 @@
   padding: 2px 6px;
   font-size: 11px;
   color: var(--text-subtle);
-  background: rgba(255, 255, 255, 0.82);
+  background: var(--surface-translucent);
   border-radius: var(--radius-sm);
 }
 
@@ -240,7 +240,7 @@
   font: inherit;
   font-size: 13px;
   font-weight: 500;
-  color: #fff;
+  color: var(--text-on-accent);
   background: var(--accent-strong);
   border: 1px solid var(--accent-strong);
   border-radius: var(--radius);
@@ -317,7 +317,7 @@
   place-items: center;
   border-radius: 50%;
   background: var(--accent);
-  color: #fff;
+  color: var(--text-on-accent);
   font-size: 11px;
   font-weight: 600;
 }
@@ -383,7 +383,7 @@
 }
 
 .item[data-dragging='true'] .card {
-  box-shadow: 0 12px 28px -10px rgba(40, 34, 28, 0.4);
+  box-shadow: 0 12px 28px -10px rgba(var(--shadow-rgb), 0.4);
   opacity: 0.95;
 }
 
@@ -398,7 +398,7 @@
   background: var(--surface);
   border: 1px solid var(--border-control);
   border-radius: var(--radius);
-  box-shadow: 0 16px 36px -14px rgba(40, 34, 28, 0.35);
+  box-shadow: 0 16px 36px -14px rgba(var(--shadow-rgb), 0.35);
 }
 .menuItem {
   display: block;
@@ -449,7 +449,7 @@
   border-top: 1px solid var(--border-hairline);
 }
 .menuDanger {
-  color: #96331f;
+  color: var(--danger-text);
 }
 .menuHint {
   display: block;
@@ -517,6 +517,93 @@
   color: var(--amber-chip-text);
 }
 
+/* --- country grouping (continental scale) -------------------------------- */
+
+.groupControls {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 16px 10px;
+}
+.filterField input {
+  width: 100%;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius);
+  padding: 7px 10px;
+  min-height: 34px;
+}
+.jumpChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.jumpChips a {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 9px;
+  border-radius: var(--pill);
+  border: 1px solid var(--border-control);
+  color: var(--text);
+  background: var(--surface);
+}
+.jumpChips a:hover {
+  background: var(--bg-sunken);
+}
+
+.countryGroup {
+  list-style: none;
+  margin: 0 0 14px;
+}
+.countryHeading {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  margin: 0 0 8px;
+  /* SC 2.4.11: a focused card must never end up hidden under this sticky bar. */
+  scroll-margin-top: 40px;
+}
+.countryHeading:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+.countryToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  background: var(--bg-sunken);
+  border: 0;
+  border-bottom: 1px solid var(--border-hairline-strong);
+  padding: 8px 4px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.borderRow,
+.ferryRow {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  font-size: 11px;
+  color: var(--text-subtle);
+}
+.ferryRow {
+  color: var(--text);
+  background: var(--bg-raised);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius);
+}
+
 /* --- bottom sheet (mobile only) ----------------------------------------- */
 
 .sheet {
@@ -531,7 +618,7 @@
   background: var(--bg-sunken);
   border-top: 1px solid var(--border-hairline-strong);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  box-shadow: 0 -8px 30px -12px rgba(40, 34, 28, 0.3);
+  box-shadow: 0 -8px 30px -12px rgba(var(--shadow-rgb), 0.3);
   /* Peek shows the handle, the summary, and the top edge of the first card. */
   transform: translateY(calc(88dvh - 190px));
   transition: transform 280ms ease;
@@ -579,12 +666,12 @@
   place-items: center;
   border-radius: 50%;
   background: var(--accent);
-  color: #fff;
+  color: var(--text-on-accent);
   font-family: var(--font-sans);
   font-size: 11px;
   font-weight: 600;
   /* Ring + hairline so the pin reads against any tile colour. */
-  border: 2px solid #fff;
+  border: 2px solid var(--pin-ring);
   outline: 1px solid var(--text);
   box-shadow: 0 3px 8px rgba(60, 30, 10, 0.28);
   cursor: pointer;
@@ -594,7 +681,7 @@
   outline-width: 2px;
 }
 .pin[data-unresolved='true'] {
-  background: #fff;
+  background: var(--pin-unresolved-bg);
   color: var(--amber-chip-text);
   border-color: var(--amber-edge);
 }

@@ -20,7 +20,18 @@ type Props = {
 
 export function SummaryBar({ places, route, routeStale, onOptimize, busy }: Props) {
   const needsReview = places.filter((p) => p.status === 'unresolved').length;
+  // Above the cap, order auto-optimize (OSRM /trip) is off the table, but routing the
+  // stops in their current order isn't — see app/api/optimize/route.ts.
   const overCap = places.length > MAX_STOPS_PER_ROUTE;
+  const actionLabel = busy
+    ? overCap
+      ? 'Routing…'
+      : 'Optimizing…'
+    : overCap
+      ? 'Route'
+      : routeStale || !route
+        ? 'Optimize route'
+        : 'Re-optimize';
 
   const stats = route
     ? `${formatDurationLong(route.totalDurationS)} · ${formatDistance(route.totalDistanceM)}`
@@ -44,8 +55,8 @@ export function SummaryBar({ places, route, routeStale, onOptimize, busy }: Prop
 
         <p className={styles.summaryNote}>
           {overCap
-            ? `${MAX_STOPS_PER_ROUTE} stops max per route — remove ${places.length - MAX_STOPS_PER_ROUTE}`
-            : `${MAX_STOPS_PER_ROUTE} stops max per route`}
+            ? `Order auto-optimizes up to ${MAX_STOPS_PER_ROUTE} stops — this trip routes in its current order`
+            : `${MAX_STOPS_PER_ROUTE} stops max per auto-optimize`}
         </p>
       </div>
 
@@ -59,9 +70,9 @@ export function SummaryBar({ places, route, routeStale, onOptimize, busy }: Prop
           type="button"
           className={`${styles.primary} on-accent`}
           onClick={onOptimize}
-          aria-disabled={busy || overCap}
+          aria-disabled={busy}
         >
-          {busy ? 'Optimizing…' : routeStale || !route ? 'Optimize route' : 'Re-optimize'}
+          {actionLabel}
         </button>
       </div>
     </div>

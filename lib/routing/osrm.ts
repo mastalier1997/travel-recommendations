@@ -24,6 +24,17 @@ export type OsrmTripResult = {
   route: Omit<Route, 'orderHash'>;
 };
 
+/** Shape of OSRM's /route response — geometry/legs for a FIXED order, no permutation search. */
+type OsrmRouteResponse = {
+  code: string;
+  routes?: {
+    distance: number;
+    duration: number;
+    legs: { distance: number; duration: number }[];
+    geometry: { type: 'LineString'; coordinates: [number, number][] };
+  }[];
+};
+
 export async function requestTrip(
   stops: { id: string; lat: number; lon: number }[],
   opts: { mode: TravelMode; roundTrip: boolean; fixFirst?: boolean; fixLast?: boolean },
@@ -85,6 +96,62 @@ export function toTripResult(
       totalDistanceM: trip.distance,
       totalDurationS: trip.duration,
       geometry: trip.geometry,
+      computedAt: new Date().toISOString(),
+    },
+  };
+}
+
+/**
+ * Geometry/totals for stops in their GIVEN order — no permutation search. This is
+ * what continental-scale trips (above MAX_STOPS_PER_ROUTE) use instead of /trip:
+ * OSRM's TSP solver is what's capped, not routing itself. Track F: this file is
+ * the only place (plus app/api/optimize/route.ts) that knows the wire format.
+ */
+export async function requestRoute(
+  stops: { id: string; lat: number; lon: number }[],
+  opts: { mode: TravelMode; roundTrip: boolean },
+): Promise<OsrmTripResult> {
+  const coords = stops.map((s) => `${s.lon},${s.lat}`).join(';');
+  const url = new URL(`/route/v1/${opts.mode}/${coords}`, OSRM_URL);
+  url.searchParams.set('geometries', 'geojson');
+  url.searchParams.set('overview', 'full');
+
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`OSRM responded ${res.status}`);
+  const data = (await res.json()) as OsrmRouteResponse;
+  return toRouteResult(stops, data, opts);
+}
+
+export function toRouteResult(
+  stops: { id: string; lat: number; lon: number }[],
+  data: OsrmRouteResponse,
+  opts: { mode: TravelMode; roundTrip: boolean },
+): OsrmTripResult {
+  if (data.code !== 'Ok' || !data.routes?.[0]) {
+    throw new Error(`OSRM route failed: ${data.code}`);
+  }
+
+  const order = stops.map((s) => s.id);
+  const solved = data.routes[0];
+  const legs: RouteLeg[] = solved.legs.map((leg, i) => ({
+    fromId: order[i],
+    toId: order[i + 1],
+    distanceM: leg.distance,
+    durationS: leg.duration,
+  }));
+
+  return {
+    order,
+    route: {
+      version: 1,
+      provider: 'osrm',
+      mode: opts.mode,
+      roundTrip: opts.roundTrip,
+      optimized: false,
+      legs,
+      totalDistanceM: solved.distance,
+      totalDurationS: solved.duration,
+      geometry: solved.geometry,
       computedAt: new Date().toISOString(),
     },
   };

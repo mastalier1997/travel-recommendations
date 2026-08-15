@@ -54,7 +54,7 @@
   cursor: default;
 }
 .importActions .on-accent {
-  color: #fff;
+  color: var(--text-on-accent);
   background: var(--accent-strong);
   border-color: var(--accent-strong);
 }
@@ -226,7 +226,7 @@
   font: inherit;
   font-size: 14px;
   font-weight: 500;
-  color: #fff;
+  color: var(--text-on-accent);
   background: var(--accent-strong);
   border: 1px solid var(--accent-strong);
   border-radius: var(--radius);
