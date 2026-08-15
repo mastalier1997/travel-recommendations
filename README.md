@@ -43,3 +43,7 @@ Once `NEXT_PUBLIC_SUPABASE_URL` and the anon key are present, `/` redirects to
 ```bash
 npm test && npx tsc --noEmit && npm run build
 ```
+
+UI/a11y regressions: `npm run test:e2e` (Playwright + axe-core, against `/dev/fixture/*`,
+both light and dark `prefers-color-scheme`). Auto-starts `next dev`; run `npm run build &&
+npm start` first if you want it against a production build instead.

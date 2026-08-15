@@ -242,7 +242,8 @@ export function Planner({ initialPlan, onSave, plans }: Props) {
         </p>
       )}
 
-      <div className={styles.body}>
+      <main className={styles.body}>
+        <h1 className="sr-only">{initialPlan.title}</h1>
         {map}
 
         {isMobile ? (
@@ -261,6 +262,7 @@ export function Planner({ initialPlan, onSave, plans }: Props) {
           </BottomSheet>
         ) : (
           <aside className={styles.panel} aria-label="Stops">
+            <h2 className="sr-only">Stops</h2>
             <p className={styles.dropzone}>
               Drop a PDF, Excel, Markdown or text file — one place per line
             </p>
@@ -271,7 +273,7 @@ export function Planner({ initialPlan, onSave, plans }: Props) {
             </div>
           </aside>
         )}
-      </div>
+      </main>
     </div>
   );
 }
