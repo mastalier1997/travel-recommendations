@@ -38,6 +38,7 @@ export function Planner({ initialPlan, onSave, plans }: Props) {
   const [focusIndex, setFocusIndex] = useState<number | null>(null);
   const [removed, setRemoved] = useState<{ place: Place; index: number } | null>(null);
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const conflictAlertRef = useRef<HTMLParagraphElement>(null);
 
   const isMobile = useIsMobile();
   const reducedMotion = usePrefersReducedMotion();
@@ -57,6 +58,15 @@ export function Planner({ initialPlan, onSave, plans }: Props) {
     paused: dragging,
     onSave: onSave ?? noop,
   });
+
+  // The alert names an action ("Reload the latest version") but role="alert" never
+  // moves focus on its own — without this a keyboard/screen-reader user hears there's
+  // a button and has to go hunt for it.
+  useEffect(() => {
+    if (save.status === 'conflict') {
+      requestAnimationFrame(() => conflictAlertRef.current?.focus());
+    }
+  }, [save.status]);
 
   const selectFromMap = useCallback((id: string) => {
     setSelectedStopId(id);
@@ -212,7 +222,7 @@ export function Planner({ initialPlan, onSave, plans }: Props) {
       />
 
       {save.status === 'conflict' && (
-        <p className={styles.error} role="alert">
+        <p ref={conflictAlertRef} tabIndex={-1} className={styles.error} role="alert">
           This plan was changed somewhere else, so your recent edits were not saved.{' '}
           <button type="button" className={styles.undoBtn} onClick={() => location.reload()}>
             Reload the latest version

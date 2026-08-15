@@ -19,6 +19,10 @@ export default async function PlanPage({ params }: { params: Promise<{ id: strin
 
   return (
     <Planner
+      // Forces a remount on plan switch — without it, Planner's places/route/version
+      // state could carry over from the previously viewed plan across a client-side
+      // navigation that reuses this same route.
+      key={id}
       initialPlan={planFromRow(row)}
       onSave={savePlan.bind(null, id)}
       plans={(all ?? []) as { id: string; title: string }[]}

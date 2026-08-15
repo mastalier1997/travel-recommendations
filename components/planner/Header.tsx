@@ -28,6 +28,17 @@ const SAVE_LABEL: Record<SaveStatus, string> = {
   error: 'Not saved',
 };
 
+/**
+ * Only 'saved' gets announced through the live region. 'saving' is stale by the
+ * time a screen reader reads it out (saves settle in well under a second), and
+ * conflict/error already get a more informative role="alert" elsewhere (see the
+ * conflict/error banners in Planner.tsx) — a second polite announcement here would
+ * just race that alert. The visible chip below still shows all four states.
+ */
+function announcedLabel(status: SaveStatus): string {
+  return status === 'saved' ? SAVE_LABEL[status] : '';
+}
+
 export function Header({
   title,
   currentId,
@@ -77,10 +88,15 @@ export function Header({
 
       <div className={styles.headerRight}>
         {saveStatus && (
-          /* Polite, and only ever a short phrase — this fires on every autosave. */
-          <span className={styles.saveStatus} role="status">
-            {SAVE_LABEL[saveStatus]}
-          </span>
+          <>
+            {/* Visible to everyone; not itself a live region — see announcedLabel. */}
+            <span className={styles.saveStatus} aria-hidden="true">
+              {SAVE_LABEL[saveStatus]}
+            </span>
+            <span role="status" className="sr-only">
+              {announcedLabel(saveStatus)}
+            </span>
+          </>
         )}
         {canImport && currentId && (
           <Link href={`/plans/${currentId}/import`} className={styles.ghost}>
