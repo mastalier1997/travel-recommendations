@@ -40,6 +40,28 @@ test.describe('continental scale — country grouping', () => {
     await expect(nav.getByRole('link', { name: /^Germany/i })).toBeVisible();
   });
 
+  test('jumping to a country does not scroll the page header off-screen', async ({ page }) => {
+    // Short viewport so the panel actually needs to scroll — otherwise scrollIntoView
+    // has nothing to do and the regression can't reproduce. Regression: .countryHeading
+    // is a scrollIntoView target that is itself position:sticky, which triggers a known
+    // browser quirk of over-scrolling ancestor scroll containers — including .shell,
+    // which `overflow:hidden` (silently a scroll container despite no scrollbar) let
+    // scrollIntoView push by the overshoot, taking the real <header> off-screen with it.
+    await page.setViewportSize({ width: 1280, height: 480 });
+    const nav = page.getByRole('navigation', { name: /jump to country/i });
+    await nav.getByRole('link', { name: /^Germany/i }).click();
+    await expect(page.getByRole('banner')).toBeInViewport();
+    await expect(page.getByText('Wanderlist')).toBeInViewport();
+  });
+
+  test('the filter/jump-chips bar stays visible after jumping to a country', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 480 });
+    const nav = page.getByRole('navigation', { name: /jump to country/i });
+    await nav.getByRole('link', { name: /^Germany/i }).click();
+    await expect(nav).toBeInViewport();
+    await expect(page.getByRole('searchbox')).toBeInViewport();
+  });
+
   test('filtering narrows the list without renumbering stops', async ({ page }) => {
     await page.getByRole('searchbox').fill('Marienplatz');
     await expect(page.getByText('Marienplatz')).toBeVisible();

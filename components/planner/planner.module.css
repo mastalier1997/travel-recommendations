@@ -4,7 +4,11 @@
   display: flex;
   flex-direction: column;
   height: 100dvh;
-  overflow: hidden;
+  /* clip, not hidden: `hidden` still makes this a scroll container (no visible
+     scrollbar, but scrollIntoView() can and does scroll it) — a sticky scrollIntoView
+     target (.countryHeading) triggers a known over-scroll into that phantom scrollport,
+     shoving the real header off-screen. `clip` clips without being scrollable at all. */
+  overflow: clip;
 }
 
 .skip {
@@ -520,11 +524,18 @@
 /* --- country grouping (continental scale) -------------------------------- */
 
 .groupControls {
-  flex: none;
+  position: sticky;
+  top: 0;
+  z-index: 3;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 0 16px 10px;
+  /* Cancel the scroll container's own side padding so the sticky background
+     covers edge-to-edge instead of leaving a gap scrolled content shows through. */
+  margin: 0 -16px;
+  padding: 10px 16px;
+  background: var(--bg-sunken);
+  border-bottom: 1px solid var(--border-hairline-strong);
 }
 .filterField input {
   width: 100%;
@@ -709,6 +720,12 @@
   }
   .undo {
     margin: 8px 14px 0;
+  }
+  .groupControls {
+    /* .sheetBody pads 14px, not .panelScroll's 16px — match it so the sticky
+       background still lands edge-to-edge instead of a 2px gap or overshoot. */
+    margin: 0 -14px;
+    padding: 10px 14px;
   }
 
   .header {

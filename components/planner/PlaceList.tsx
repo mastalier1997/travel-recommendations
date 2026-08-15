@@ -70,6 +70,19 @@ export function PlaceList({
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState('');
 
+  // Both the filter/chips bar and each country heading are sticky — stack them by
+  // measuring the bar's actual height (it wraps to more lines on a narrow panel or
+  // with several countries) rather than a guessed offset that breaks under wrapping.
+  const controlsRef = useRef<HTMLDivElement>(null);
+  const [controlsH, setControlsH] = useState(0);
+  useEffect(() => {
+    const el = controlsRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => setControlsH(entry.contentRect.height));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   const sensors = useSensors(
     // Desktop: immediate drag off the grip. Touch: long-press, so a vertical swipe
     // still scrolls the sheet instead of picking up a card.
@@ -225,7 +238,7 @@ export function PlaceList({
 
   return (
     <>
-      <div className={styles.groupControls}>
+      <div ref={controlsRef} className={styles.groupControls}>
         <label className={styles.filterField}>
           <span className="sr-only">Filter stops</span>
           <input
@@ -290,6 +303,7 @@ export function PlaceList({
                     id={`${key}-h`}
                     tabIndex={-1}
                     className={styles.countryHeading}
+                    style={{ top: controlsH, scrollMarginTop: controlsH + 8 }}
                     ref={(el) => {
                       if (el) headingRefs.current.set(key, el);
                       else headingRefs.current.delete(key);
