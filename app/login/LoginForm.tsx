@@ -13,6 +13,9 @@ export function LoginForm({ next }: { next: string }) {
   const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const [message, setMessage] = useState('');
 
+  const redirectTo = (path: string) =>
+    `${window.location.origin}/auth/callback?next=${encodeURIComponent(path)}`;
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setState('sending');
@@ -20,9 +23,7 @@ export function LoginForm({ next }: { next: string }) {
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
-      },
+      options: { emailRedirectTo: redirectTo(next) },
     });
 
     if (error) {
@@ -34,40 +35,65 @@ export function LoginForm({ next }: { next: string }) {
     }
   }
 
-  return (
-    <form onSubmit={onSubmit} className={styles.form}>
-      <label htmlFor="email" className={styles.label}>
-        Email address
-      </label>
-      <input
-        id="email"
-        name="email"
-        type="email"
-        autoComplete="email"
-        required
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        className={styles.input}
-        aria-describedby="email-hint"
-        disabled={state === 'sending' || state === 'sent'}
-      />
-      <p id="email-hint" className={styles.hint}>
-        We email you a link — there is no password to remember.
-      </p>
+  async function onGoogleClick() {
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: redirectTo(next) },
+    });
+    if (error) {
+      setState('error');
+      setMessage(error.message);
+    }
+  }
 
+  return (
+    <>
       <button
-        type="submit"
-        className={`${styles.submit} on-accent`}
+        type="button"
+        onClick={onGoogleClick}
+        className={styles.google}
         disabled={state === 'sending' || state === 'sent'}
       >
-        {state === 'sending' ? 'Sending…' : 'Email me a link'}
+        Continue with Google
       </button>
 
-      {message && (
-        <p className={styles.message} role={state === 'error' ? 'alert' : 'status'}>
-          {message}
+      <div className={styles.divider}>or</div>
+
+      <form onSubmit={onSubmit} className={styles.form}>
+        <label htmlFor="email" className={styles.label}>
+          Email address
+        </label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className={styles.input}
+          aria-describedby="email-hint"
+          disabled={state === 'sending' || state === 'sent'}
+        />
+        <p id="email-hint" className={styles.hint}>
+          We email you a link — there is no password to remember.
         </p>
-      )}
-    </form>
+
+        <button
+          type="submit"
+          className={`${styles.submit} on-accent`}
+          disabled={state === 'sending' || state === 'sent'}
+        >
+          {state === 'sending' ? 'Sending…' : 'Email me a link'}
+        </button>
+
+        {message && (
+          <p className={styles.message} role={state === 'error' ? 'alert' : 'status'}>
+            {message}
+          </p>
+        )}
+      </form>
+    </>
   );
 }

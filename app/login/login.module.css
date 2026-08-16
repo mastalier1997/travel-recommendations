@@ -14,6 +14,34 @@
   flex-direction: column;
 }
 
+.google {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius);
+  padding: 11px 16px;
+  min-height: 44px;
+  cursor: pointer;
+  width: 100%;
+}
+.google:hover:not(:disabled) {
+  background: var(--bg-sunken);
+}
+.google:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.divider {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 16px 0;
+}
+
 .label {
   font-size: 13px;
   font-weight: 500;
