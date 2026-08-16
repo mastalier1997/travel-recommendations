@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { SUPABASE_ANON_KEY, SUPABASE_URL, isSupabaseConfigured } from '@/lib/supabase/config';
 import { safeNext } from '@/lib/supabase/redirect';
+import { isSessionExpired } from '@/lib/supabase/session';
 
 // Set on the callback route after a real sign-in; distinguishes "session expired"
 // from "never signed in" for the message shown on /login. Not itself a security
@@ -10,7 +11,12 @@ const SEEN_COOKIE = 'wl_seen';
 
 /**
  * Refreshes the auth cookie on every request. Server Components cannot write
- * cookies, so without this a session would silently expire mid-visit.
+ * cookies, so without this a session would silently expire mid-visit. Also
+ * enforces a ~30-day session cutoff: Supabase's own "time-box user sessions"
+ * setting is Pro-plan only, so on the free tier this is the only enforcement
+ * there is — hence the explicit signOut() below rather than just redirecting,
+ * since a session this app calls "expired" would otherwise still be a live,
+ * usable cookie against PostgREST under RLS.
  */
 export async function middleware(request: NextRequest) {
   const { pathname, origin } = request.nextUrl;
@@ -39,21 +45,27 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  // Do not remove: this call is what performs the refresh.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Do not remove: this call is what performs the refresh. getClaims() (not
+  // getUser()) so we get the amr claim needed for the 30-day check below, in
+  // the same request instead of a second network round trip.
+  const { data } = await supabase.auth.getClaims();
+  let claims = data?.claims ?? null;
 
-  // Carries any cookie writes getUser() just made (refreshed tokens, or the
-  // clearing of an expired session) onto a redirect response — otherwise a
-  // redirect built fresh would silently drop them.
+  if (claims && isSessionExpired(claims)) {
+    await supabase.auth.signOut({ scope: 'local' });
+    claims = null;
+  }
+
+  // Carries any cookie writes getClaims()/signOut() just made (refreshed
+  // tokens, or the clearing of an expired session) onto a redirect response —
+  // otherwise a redirect built fresh would silently drop them.
   const redirectWithCookies = (url: URL) => {
     const redirected = NextResponse.redirect(url);
     response.headers.getSetCookie().forEach((cookie) => redirected.headers.append('set-cookie', cookie));
     return redirected;
   };
 
-  if (user) {
+  if (claims) {
     // Signed in and revisiting the login screen (or the root door) — skip straight
     // to their plans instead of showing the form again.
     if (pathname.startsWith('/login')) {
