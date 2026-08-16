@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import { AccountMenu } from '@/components/planner/AccountMenu';
 import { createPlan, deletePlan } from './actions';
 import styles from './plans.module.css';
 
@@ -7,16 +8,19 @@ export const metadata = { title: 'Your plans · Wanderlist' };
 
 export default async function PlansPage() {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from('plans')
-    .select('id, title, places, updated_at')
-    .order('updated_at', { ascending: false });
+  const [{ data }, { data: userData }] = await Promise.all([
+    supabase.from('plans').select('id, title, places, updated_at').order('updated_at', { ascending: false }),
+    supabase.auth.getUser(),
+  ]);
 
   const plans = data ?? [];
 
   return (
     <main className={styles.wrap}>
-      <h1 className={styles.title}>Your plans</h1>
+      <div className={styles.titleRow}>
+        <h1 className={styles.title}>Your plans</h1>
+        {userData.user && <AccountMenu email={userData.user.email ?? ''} />}
+      </div>
 
       <form action={createPlan} className={styles.newForm}>
         <label htmlFor="new-title" className="sr-only">

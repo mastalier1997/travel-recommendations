@@ -5,16 +5,33 @@ import styles from './login.module.css';
 
 export const metadata = { title: 'Sign in · Wanderlist' };
 
+const REASON_MESSAGE: Record<string, string> = {
+  expired: 'For your security, we sign you out after 30 days. Sign in again to get back to your plans.',
+  signedout: "You're signed out.",
+};
+
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; reason?: string; error?: string }>;
 }) {
-  const { next } = await searchParams;
+  const { next, reason, error } = await searchParams;
+
+  const message =
+    error === 'link'
+      ? "That sign-in link didn't work — it may have expired. Enter your email to get a new one."
+      : reason && REASON_MESSAGE[reason];
 
   return (
     <main className={styles.wrap}>
-      <AutoFocusH1 className={styles.title}>Sign in to Wanderlist</AutoFocusH1>
+      <AutoFocusH1 className={styles.title} describedBy={message ? 'login-reason' : undefined}>
+        Sign in to Wanderlist
+      </AutoFocusH1>
+      {message && (
+        <p id="login-reason" className={styles.hint}>
+          {message}
+        </p>
+      )}
       {isSupabaseConfigured ? (
         <>
           <LoginForm next={next ?? '/plans'} />
