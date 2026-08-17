@@ -36,6 +36,8 @@ export function LoginForm({ next }: { next: string }) {
   }
 
   async function onGoogleClick() {
+    setState('sending');
+
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',

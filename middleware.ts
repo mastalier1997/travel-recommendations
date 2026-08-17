@@ -27,7 +27,7 @@ export async function middleware(request: NextRequest) {
     if (pathname.startsWith('/plans')) {
       const url = request.nextUrl.clone();
       url.pathname = '/login';
-      return NextResponse.redirect(url);
+      return NextResponse.redirect(url, { status: 303 });
     }
     return NextResponse.next();
   }
@@ -58,9 +58,12 @@ export async function middleware(request: NextRequest) {
 
   // Carries any cookie writes getClaims()/signOut() just made (refreshed
   // tokens, or the clearing of an expired session) onto a redirect response —
-  // otherwise a redirect built fresh would silently drop them.
+  // otherwise a redirect built fresh would silently drop them. Status 303
+  // (not the 307 default) because /plans actions POST here too — a POST
+  // hitting this mid-form-submit (e.g. session expired) must not be replayed
+  // against /login.
   const redirectWithCookies = (url: URL) => {
-    const redirected = NextResponse.redirect(url);
+    const redirected = NextResponse.redirect(url, { status: 303 });
     response.headers.getSetCookie().forEach((cookie) => redirected.headers.append('set-cookie', cookie));
     return redirected;
   };

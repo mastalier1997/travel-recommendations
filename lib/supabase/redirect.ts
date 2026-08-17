@@ -10,7 +10,8 @@ export function safeNext(next: string | null | undefined, origin: string): strin
   if (next) {
     try {
       const url = new URL(next, origin);
-      if (url.origin === origin && !BLOCKED_PREFIXES.some((p) => url.pathname.startsWith(p))) {
+      const inAuthFlow = BLOCKED_PREFIXES.some((p) => url.pathname === p || url.pathname.startsWith(`${p}/`));
+      if (url.origin === origin && !inAuthFlow) {
         return `${url.pathname}${url.search}`;
       }
     } catch {

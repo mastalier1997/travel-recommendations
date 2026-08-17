@@ -11,6 +11,11 @@ export function sessionAgeS(claims: { amr?: unknown }, nowS = Math.floor(Date.no
   return typeof timestamp === 'number' ? nowS - timestamp : null;
 }
 
+// Fails open: an unreadable amr claim reads as age 0 (not expired), not expired.
+// This is the only enforcement of the 30-day cutoff on the free tier (see
+// middleware.ts), so if a future claims-shape change ever makes amr
+// unreadable, the cutoff goes silently unenforced rather than erring toward
+// signing people out.
 export function isSessionExpired(claims: { amr?: unknown }, nowS?: number): boolean {
   return (sessionAgeS(claims, nowS) ?? 0) > SESSION_MAX_AGE_S;
 }
