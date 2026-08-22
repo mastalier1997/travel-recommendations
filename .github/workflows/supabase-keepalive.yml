@@ -1,0 +1,28 @@
+name: Supabase keepalive
+
+# Supabase free tier pauses a project after 7 days with no API activity.
+# Daily cadence leaves headroom against that window even if a scheduled
+# run gets delayed or skipped.
+on:
+  schedule:
+    - cron: '37 6 * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Query PostgREST
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        run: |
+          curl --fail --silent --show-error \
+               --retry 3 --retry-all-errors --retry-delay 15 --max-time 30 \
+               -o /dev/null -w 'HTTP %{http_code} in %{time_total}s\n' \
+               -H "apikey: $SUPABASE_ANON_KEY" \
+               -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+               "$SUPABASE_URL/rest/v1/plans?select=id&limit=1"
