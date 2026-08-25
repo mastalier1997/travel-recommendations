@@ -5,6 +5,19 @@ import type { DraftRow } from '@/lib/types';
 import { CandidateRow } from './CandidateRow';
 import styles from './import.module.css';
 
+/** This row's own reference point — its explicitly accepted candidate — used as
+ * this row's contribution to every OTHER row's "how far is this from the rest of
+ * the batch" comparison. Only `decision === 'accept'` counts: a row the user
+ * skipped never becomes a place (see draft.ts's toPlaces), so its coordinates
+ * shouldn't anchor anyone else's outlier check; an undecided row's top match is
+ * likewise not a real commitment yet, and using it would make a sibling row's
+ * warning flip on/off purely because someone else's selection changed. */
+function bestGuessPoint(row: DraftRow): { lat: number; lon: number } | null {
+  if (row.decision !== 'accept' || row.selectedIndex === null) return null;
+  const c = row.candidates[row.selectedIndex];
+  return c ? { lat: c.lat, lon: c.lon } : null;
+}
+
 type Props = {
   rows: DraftRow[];
   unresolvedCount: number;
@@ -105,6 +118,9 @@ export function ConfirmList({
           <li key={row.id} className={styles.row}>
             <CandidateRow
               row={row}
+              // Every other row's best guess — never this row's own, or a candidate
+              // would end up flagged as "far from itself".
+              otherPoints={rows.filter((r) => r.id !== row.id).map(bestGuessPoint).filter((p) => p !== null)}
               onSelectCandidate={(i) => onSelectCandidate(row.id, i)}
               onSkip={() => onSkip(row.id)}
               onRetype={(raw) => onRetype(row.id, raw)}

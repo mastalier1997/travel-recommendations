@@ -2,10 +2,16 @@
 
 import { useId, useState } from 'react';
 import type { DraftRow } from '@/lib/types';
+import { labelForOsmTag } from '@/lib/content/osm-labels';
+import { nearestDistanceM, OUTLIER_DISTANCE_M } from '@/lib/import/outlier';
+import { formatDistance } from '@/lib/format';
 import styles from './import.module.css';
 
 type Props = {
   row: DraftRow;
+  /** Every other row's best-guess point, for the "far from the rest of this
+   * import" check — never this row's own (see ConfirmList's bestGuessPoint). */
+  otherPoints: { lat: number; lon: number }[];
   onSelectCandidate: (index: number) => void;
   onSkip: () => void;
   onRetype: (raw: string) => void;
@@ -19,7 +25,7 @@ type Props = {
  * same markup"). Candidates never carry a thumbnail — name + region text is the
  * whole identity, so there is nothing decorative to mark alt="" on here.
  */
-export function CandidateRow({ row, onSelectCandidate, onSkip, onRetype, onRetry, onRemove }: Props) {
+export function CandidateRow({ row, otherPoints, onSelectCandidate, onSkip, onRetype, onRetry, onRemove }: Props) {
   const groupName = useId();
   const [retypeValue, setRetypeValue] = useState(row.raw);
 
@@ -107,21 +113,34 @@ export function CandidateRow({ row, onSelectCandidate, onSkip, onRetype, onRetry
         Which place is <span className={styles.mono}>&ldquo;{row.raw}&rdquo;</span>?
       </legend>
 
-      {row.candidates.map((c, i) => (
-        <label key={i} className={styles.candidateLabel}>
-          <input
-            type="radio"
-            name={groupName}
-            required
-            checked={row.selectedIndex === i && row.decision === 'accept'}
-            onChange={() => onSelectCandidate(i)}
-          />
-          <span className={styles.name}>{c.name}</span>
-          <span className={styles.meta}>
-            {c.address} &middot; {c.tag}
-          </span>
-        </label>
-      ))}
+      {row.candidates.map((c, i) => {
+        const category = labelForOsmTag(c.class, c.tag);
+        const nearestM = nearestDistanceM(c, otherPoints);
+        const isOutlier = nearestM !== null && nearestM > OUTLIER_DISTANCE_M;
+        return (
+          <label key={i} className={styles.candidateLabel}>
+            <input
+              type="radio"
+              name={groupName}
+              required
+              checked={row.selectedIndex === i && row.decision === 'accept'}
+              onChange={() => onSelectCandidate(i)}
+            />
+            <span className={styles.name}>{c.name}</span>
+            <span className={styles.meta}>
+              {category && <span className={styles.categoryChip}>{category}</span>}
+              {c.address}
+            </span>
+            {/* Self-describing text, not a color-only warning — same rule the rest
+                of the app follows for anything that isn't purely decorative. */}
+            {isOutlier && (
+              <span className={styles.outlierWarning}>
+                {formatDistance(nearestM)} from the rest of this import — check this is right
+              </span>
+            )}
+          </label>
+        );
+      })}
 
       <label className={styles.candidateLabel}>
         <input

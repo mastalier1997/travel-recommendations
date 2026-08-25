@@ -155,8 +155,29 @@
   font-weight: 500;
 }
 .meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 11px;
   color: var(--text-subtle);
+}
+.categoryChip {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 1px 7px;
+  border-radius: var(--pill);
+  background: var(--bg-sunken);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.outlierWarning {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--danger-text);
+  /* Never background alone — flattens under forced-colors; a border re-colours. */
+  border-left: 2px solid var(--danger-text);
+  padding-left: 6px;
 }
 
 .retypeRow {
