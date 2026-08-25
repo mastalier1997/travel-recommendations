@@ -1,7 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin';
-import { decideWait, MIN_INTERVAL_MS, RateLimitedError } from './gate-decision';
+import { decideWait, MIN_INTERVAL_MS, RateLimitedError, type RateGateProvider } from './gate-decision';
 
-export { RateLimitedError, MIN_INTERVAL_MS, MAX_WAIT_MS } from './gate-decision';
+export { RateLimitedError, MIN_INTERVAL_MS, MAX_WAIT_MS, type RateGateProvider } from './gate-decision';
 
 /**
  * Claims the next slot for `provider` and waits for it (or throws RateLimitedError
@@ -9,10 +9,10 @@ export { RateLimitedError, MIN_INTERVAL_MS, MAX_WAIT_MS } from './gate-decision'
  * supabase/migrations/0002_rate_gate_fn.sql for why this can't be a plain
  * read-then-write from here.
  */
-export async function waitForSlot(provider: string): Promise<void> {
+export async function waitForSlot(provider: RateGateProvider): Promise<void> {
   const { data, error } = await createAdminClient().rpc('claim_rate_slot', {
     p_provider: provider,
-    p_interval_ms: MIN_INTERVAL_MS,
+    p_interval_ms: MIN_INTERVAL_MS[provider],
   });
   if (error) throw new Error(`rate gate failed: ${error.message}`);
 

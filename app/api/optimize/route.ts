@@ -9,6 +9,12 @@ import { SAMPLE_ROUTE } from '@/lib/fixtures/sample-plan';
 import { requestTrip, requestRoute, requestSolvedRoute } from '@/lib/routing/osrm';
 import { solveOrder } from '@/lib/routing/solve';
 import { haversineMatrix } from '@/lib/routing/haversine';
+import { simplifyToMaxPoints, type Point } from '@/lib/geo/simplify';
+
+/** Above this, a turn-by-turn OSRM trace (thousands of points on a continental
+ * trip) is too dense to be worth rendering or shipping to the client — see
+ * Route.generalized in lib/types.ts. */
+const MAX_GEOMETRY_POINTS = 500;
 
 export const maxDuration = 20;
 
@@ -47,6 +53,7 @@ export async function POST(req: Request) {
         roundTrip: roundTrip ?? false,
         optimized: withinHeuristic,
         optimizationMethod: withinExact ? 'exact' : withinHeuristic ? 'heuristic' : 'none',
+        generalized: !withinExact,
       },
     } satisfies OptimizeResponse);
   }
@@ -84,8 +91,26 @@ export async function POST(req: Request) {
       : withinHeuristic
         ? await requestSolvedRoute(stops, { mode: mode ?? 'driving', roundTrip: roundTrip ?? false, fixFirst, fixLast })
         : await requestRoute(stops, { mode: mode ?? 'driving', roundTrip: roundTrip ?? false });
-    return Response.json({ order, route } satisfies OptimizeResponse);
+    return Response.json({
+      order,
+      route: withinExact ? route : generalize(route),
+    } satisfies OptimizeResponse);
   } catch {
     return Response.json({ error: 'Could not reach the routing service.' }, { status: 502 });
   }
+}
+
+/** A continental-scale trip's turn-by-turn OSRM geometry is thousands of points —
+ * too dense to be worth rendering or shipping to the client. Simplify and flag it
+ * so the UI can say so (see Route.generalized in lib/types.ts) rather than imply
+ * the shown distance/time figures are turn-by-turn precise when they're not. */
+function generalize<T extends Awaited<ReturnType<typeof requestTrip>>['route']>(route: T): T {
+  return {
+    ...route,
+    geometry: {
+      ...route.geometry,
+      coordinates: simplifyToMaxPoints(route.geometry.coordinates as Point[], MAX_GEOMETRY_POINTS),
+    },
+    generalized: true,
+  };
 }

@@ -11,7 +11,7 @@ function toRad(deg: number): number {
   return (deg * Math.PI) / 180;
 }
 
-function haversineDistance(a: { lat: number; lon: number }, b: { lat: number; lon: number }): number {
+export function haversineDistance(a: { lat: number; lon: number }, b: { lat: number; lon: number }): number {
   const dLat = toRad(b.lat - a.lat);
   const dLon = toRad(b.lon - a.lon);
   const lat1 = toRad(a.lat);

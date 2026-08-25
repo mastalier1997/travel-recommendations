@@ -38,8 +38,11 @@ export function SummaryBar({ places, route, routeStale, onOptimize, busy }: Prop
     ? `${formatDurationLong(route.totalDurationS)} · ${formatDistance(route.totalDistanceM)}`
     : 'No route yet';
 
+  // A continental-scale route's geometry is simplified (lib/geo/simplify.ts, set in
+  // app/api/optimize/route.ts) — that's an accuracy claim about the numbers below,
+  // not just a map-drawing detail, so it's stated here rather than only as a map badge.
   const spoken = route
-    ? `${places.length} stops, ${formatDurationSpoken(route.totalDurationS)}, ${formatDistanceSpoken(route.totalDistanceM)}.`
+    ? `${places.length} stops, ${formatDurationSpoken(route.totalDurationS)}, ${formatDistanceSpoken(route.totalDistanceM)}${route.generalized ? ', route simplified for this zoom' : ''}.`
     : `${places.length} stops, no route yet.`;
 
   return (
@@ -59,6 +62,9 @@ export function SummaryBar({ places, route, routeStale, onOptimize, busy }: Prop
             ? `Order auto-optimizes up to ${MAX_STOPS_SOLVED} stops — this trip routes in its current order`
             : `${MAX_STOPS_SOLVED} stops max per auto-optimize`}
         </p>
+        {route?.generalized && (
+          <p className={styles.summaryNote}>Route simplified for this zoom — zoom in on the map for turn-by-turn shape</p>
+        )}
       </div>
 
       <div className={styles.summaryActions} aria-busy={busy}>

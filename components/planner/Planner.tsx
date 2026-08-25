@@ -11,6 +11,7 @@ import { PlaceList } from './PlaceList';
 import { SummaryBar } from './SummaryBar';
 import { BottomSheet } from './BottomSheet';
 import { Header } from './Header';
+import { AddStopSearch } from './AddStopSearch';
 import styles from './planner.module.css';
 
 const UNDO_MS = 10_000;
@@ -80,6 +81,13 @@ export function Planner({ initialPlan, onSave, plans, account }: Props) {
   const selectFromList = useCallback((id: string) => {
     setSelectedStopId((cur) => (cur === id ? null : id));
     setSelectionSource('list');
+  }, []);
+
+  // Appends to the end of the itinerary — same route-staleness handling as reorder,
+  // since the solver's answer no longer describes the (now longer) list either.
+  const addPlace = useCallback((place: Place) => {
+    setPlaces((cur) => [...cur, place]);
+    setRoute((cur) => (cur ? { ...cur, optimized: false } : cur));
   }, []);
 
   // One path for every order change — drag, arrow keys, and the actions menu all land here.
@@ -266,6 +274,7 @@ export function Planner({ initialPlan, onSave, plans, account }: Props) {
         ) : (
           <aside className={styles.panel} aria-label="Stops">
             <h2 className="sr-only">Stops</h2>
+            <AddStopSearch places={places} route={route} selectedStopId={selectedStopId} onAddPlace={addPlace} />
             <p className={styles.dropzone}>
               Drop a PDF, Excel, Markdown or text file — one place per line
             </p>

@@ -214,6 +214,26 @@ export const MAX_DRAFT_ROWS = 50;
 export type GeocodeRequest = { q: string; near?: { lat: number; lon: number } };
 export type GeocodeResponse = { candidates: Candidate[] };
 
+/** A named POI from Overpass, not yet annotated with plan-specific context (that's
+ * lib/plan/suggest.ts's job — "already added" and detour cost both need `Plan.places`/
+ * `Route`, which this stateless endpoint never sees, same seam as Candidate above). */
+export type NearbyPoi = {
+  name: string;
+  lat: number;
+  lon: number;
+  osm: OsmRef | null;
+  class: string;
+  tag: string;
+};
+
+export type NearbyRequest = {
+  /** [lon, lat] pairs — a short corridor (a few legs' worth of stops), never the
+   * whole route. See lib/plan/suggest.ts's corridorAroundStop. */
+  corridor: [number, number][];
+  radiusM: number;
+};
+export type NearbyResponse = { pois: NearbyPoi[] };
+
 export type DescribeRequest = {
   places: Pick<Place, 'id' | 'name' | 'lat' | 'lon' | 'wikidata' | 'wikipedia' | 'osm'>[];
 };

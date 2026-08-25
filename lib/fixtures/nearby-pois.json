@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Nishiki Tenmangū Shrine",
+    "lat": 35.0056,
+    "lon": 135.7605,
+    "osm": { "type": "node", "id": 900100001, "class": "tourism", "tag": "attraction" },
+    "class": "tourism",
+    "tag": "attraction"
+  },
+  {
+    "name": "Nishiki Warai",
+    "lat": 35.0038,
+    "lon": 135.7599,
+    "osm": { "type": "node", "id": 900100002, "class": "amenity", "tag": "restaurant" },
+    "class": "amenity",
+    "tag": "restaurant"
+  },
+  {
+    "name": "Nishiki Market",
+    "lat": 35.005,
+    "lon": 135.7649,
+    "osm": { "type": "way", "id": 900100003, "class": "tourism", "tag": "attraction" },
+    "class": "tourism",
+    "tag": "attraction"
+  }
+]

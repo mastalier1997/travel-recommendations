@@ -20,7 +20,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import type { Place, Route } from '@/lib/types';
-import { groupByCountry, type CountryGroup } from '@/lib/plan/groupByCountry';
+import { groupByCountry, groupKey, type CountryGroup } from '@/lib/plan/groupByCountry';
 import { formatDistance, formatDurationLong, formatDurationShort } from '@/lib/format';
 import { PlaceCard } from './PlaceCard';
 import styles from './planner.module.css';
@@ -45,8 +45,6 @@ const instructions: ScreenReaderInstructions = {
   draggable:
     'Press space or enter to start reordering this stop. Use the up and down arrows to move it, space or enter to drop, escape to cancel. Or use the stop actions menu to move it without dragging.',
 };
-
-const groupKey = (g: CountryGroup) => `${g.countryCode ?? 'unknown'}-${g.startIndex}`;
 
 export function PlaceList({
   places,

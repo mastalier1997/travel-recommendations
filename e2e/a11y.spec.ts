@@ -13,6 +13,13 @@ async function openPopovers(page: Page) {
     const trigger = page.getByRole('button', { name });
     if (await trigger.count()) await trigger.first().click();
   }
+  // AddStopSearch is a combobox, not a popover trigger — open its listbox the same
+  // way a real user would, by typing (MOCK-mode /api/nearby returns fixture POIs).
+  const search = page.getByRole('combobox', { name: /search a place/i });
+  if (await search.count()) {
+    await search.first().fill('nishiki');
+    await page.waitForTimeout(400); // clears the geocode debounce
+  }
 }
 
 for (const fixture of FIXTURES) {

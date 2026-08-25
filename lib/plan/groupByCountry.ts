@@ -22,6 +22,12 @@ export type CountryGroup = {
   durationS: number;
 };
 
+/** Stable key for one group — shared by the sidebar (jump chips, sticky headers)
+ * and the map (cluster badges), so both sides of the UI agree on group identity. */
+export function groupKey(g: Pick<CountryGroup, 'countryCode' | 'startIndex'>): string {
+  return `${g.countryCode ?? 'unknown'}-${g.startIndex}`;
+}
+
 export function groupByCountry(places: Place[], route: Route | null): CountryGroup[] {
   const legByFromId = new Map((route?.legs ?? []).map((leg) => [leg.fromId, leg] as const));
   const groups: CountryGroup[] = [];

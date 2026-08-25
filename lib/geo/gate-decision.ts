@@ -1,5 +1,12 @@
-/** Margin over Nominatim's 1 req/s policy — 1000ms exactly would be cutting it close. */
-export const MIN_INTERVAL_MS = 1050;
+export type RateGateProvider = 'nominatim' | 'overpass';
+
+/** Margin over each provider's own rate policy, keyed by provider — Nominatim's
+ * 1 req/s (1000ms exactly would be cutting it close) and Overpass's public
+ * instance, which wants real breathing room between dense corridor queries. */
+export const MIN_INTERVAL_MS: Record<RateGateProvider, number> = {
+  nominatim: 1050,
+  overpass: 5000,
+};
 /** Past this wait, bail rather than hold a serverless invocation open. */
 export const MAX_WAIT_MS = 4000;
 
