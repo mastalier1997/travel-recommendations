@@ -68,6 +68,12 @@ export function useImportDraft(planId: string, geocode: Geocoder = fetchGeocoder
     [dispatch, geocode],
   );
 
+  // draftReducer must run exactly once per call here: add-rows mints fresh random
+  // ids on every invocation, so kickResolve and the committed state would see two
+  // different id sets if this recomputed against a second, possibly-newer `cur` —
+  // silently stranding every row it just added in 'pending' forever. `draft` being
+  // one render behind (e.g. a remove-row that lands in the same tick) is the
+  // narrower, purely theoretical risk in exchange.
   const addRows = useCallback(
     (text: string, origin: DraftRow['origin']) => {
       const next = draftReducer(draft, { type: 'add-rows', text, origin });

@@ -15,7 +15,16 @@ export async function POST(req: Request) {
   if (!q?.trim()) return Response.json({ error: 'q is required' }, { status: 400 });
 
   if (MOCK) {
-    const candidates = RESPONSES[normalizeQuery(q)]?.candidates ?? [];
+    const normalized = normalizeQuery(q);
+    // e2e-only escape hatch (e2e/import-recovery.spec.ts): the recorded fixtures can
+    // only express success/no-match, never a network failure, so this magic query
+    // forces the same error shape the real provider fetch produces on failure.
+    if (normalized === 'trigger geocode error') {
+      return Response.json({ error: 'Could not reach the geocoder.' } satisfies ApiError, {
+        status: 502,
+      });
+    }
+    const candidates = RESPONSES[normalized]?.candidates ?? [];
     // Real geocoding is the slow step; a flat 0ms mock hides every loading state.
     await new Promise((r) => setTimeout(r, 220));
     return Response.json({ candidates } satisfies GeocodeResponse);

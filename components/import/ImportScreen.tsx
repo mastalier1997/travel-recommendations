@@ -69,6 +69,7 @@ export function ImportScreen({ onSubmitText, onUploadFile, uploading, error }: P
         <input
           ref={fileRef}
           type="file"
+          aria-label="Upload file"
           accept=".pdf,.xlsx,.xls,.csv,.md,.txt"
           className="sr-only"
           onChange={onFileChange}

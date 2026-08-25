@@ -94,6 +94,7 @@ export function ImportFlow({ planId, version, existingPlaceCount, onCommit }: Pr
             onSkip={(rowId) => draft.decide(rowId, 'keep-unresolved')}
             onRetype={draft.retype}
             onRetry={draft.retry}
+            onRemove={draft.removeRow}
             onCommit={commit}
             committing={committing}
             capWarning={capWarning}

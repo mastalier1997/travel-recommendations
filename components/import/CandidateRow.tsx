@@ -10,6 +10,7 @@ type Props = {
   onSkip: () => void;
   onRetype: (raw: string) => void;
   onRetry: () => void;
+  onRemove: () => void;
 };
 
 /**
@@ -18,7 +19,7 @@ type Props = {
  * same markup"). Candidates never carry a thumbnail — name + region text is the
  * whole identity, so there is nothing decorative to mark alt="" on here.
  */
-export function CandidateRow({ row, onSelectCandidate, onSkip, onRetype, onRetry }: Props) {
+export function CandidateRow({ row, onSelectCandidate, onSkip, onRetype, onRetry, onRemove }: Props) {
   const groupName = useId();
   const [retypeValue, setRetypeValue] = useState(row.raw);
 
@@ -39,9 +40,22 @@ export function CandidateRow({ row, onSelectCandidate, onSkip, onRetype, onRetry
           {row.error ?? 'Could not reach the geocoder.'} &mdash;{' '}
           <span className={styles.mono}>&ldquo;{row.raw}&rdquo;</span>
         </p>
-        <button type="button" className={styles.retryBtn} onClick={onRetry}>
-          Retry
-        </button>
+        <div className={styles.rowActions}>
+          <button type="button" className={styles.retryBtn} onClick={onRetry}>
+            Retry
+          </button>
+          <button type="button" className={styles.skipBtn} onClick={onSkip}>
+            Skip &mdash; keep &ldquo;{row.raw}&rdquo; as plain text
+          </button>
+          <button
+            type="button"
+            className={styles.removeBtn}
+            aria-label={`Remove "${row.raw}" from this import`}
+            onClick={onRemove}
+          >
+            Remove
+          </button>
+        </div>
       </div>
     );
   }
@@ -69,9 +83,19 @@ export function CandidateRow({ row, onSelectCandidate, onSkip, onRetype, onRetry
           />
           <button type="submit">Search again</button>
         </form>
-        <button type="button" className={styles.skipBtn} onClick={onSkip}>
-          Skip &mdash; keep &ldquo;{row.raw}&rdquo; as plain text
-        </button>
+        <div className={styles.rowActions}>
+          <button type="button" className={styles.skipBtn} onClick={onSkip}>
+            Skip &mdash; keep &ldquo;{row.raw}&rdquo; as plain text
+          </button>
+          <button
+            type="button"
+            className={styles.removeBtn}
+            aria-label={`Remove "${row.raw}" from this import`}
+            onClick={onRemove}
+          >
+            Remove
+          </button>
+        </div>
       </div>
     );
   }

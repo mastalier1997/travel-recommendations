@@ -75,8 +75,8 @@ export function draftReducer(draft: ImportDraft, action: DraftAction): ImportDra
 
     // The "Skip this place" radio in the confirm UI keeps the raw text with no pin —
     // that is 'keep-unresolved', not a full discard. A row is only ever fully
-    // dropped by removing it outright (remove-row), which the UI does not currently
-    // expose from the confirm screen but the reducer supports for completeness.
+    // dropped by removing it outright (remove-row), which the 'error'/'none' states
+    // in CandidateRow expose as their "Remove" button.
     case 'decide':
       return updateRow(draft, action.rowId, (row) => ({ ...row, decision: action.decision }));
 
