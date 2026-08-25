@@ -7,6 +7,7 @@ import { toGpx } from '@/lib/export/gpx';
 import { toGeoJson } from '@/lib/export/geojson';
 import { slugify } from '@/lib/export/filename';
 import { downloadText } from '@/lib/export/download';
+import { usePopoverPosition } from '@/lib/hooks/usePopoverPosition';
 import styles from './planner.module.css';
 
 type Props = {
@@ -43,14 +44,7 @@ export function ExportMenu({ title, places, route, isMobile }: Props) {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [announcement, setAnnouncement] = useState('');
 
-  const position = () => {
-    const t = triggerRef.current;
-    const m = ref.current;
-    if (!t || !m) return;
-    const r = t.getBoundingClientRect();
-    m.style.left = `${Math.max(8, r.right - 216)}px`;
-    m.style.top = `${r.bottom + 6}px`;
-  };
+  usePopoverPosition(triggerRef, ref, { width: 216 });
 
   const runExport = (format: Format) => {
     const filename = `${slugify(title)}.${EXT[format]}`;
@@ -92,7 +86,7 @@ export function ExportMenu({ title, places, route, isMobile }: Props) {
 
   return (
     <>
-      <button type="button" ref={triggerRef} className={styles.ghost} popoverTarget={menuId} onClick={position}>
+      <button type="button" ref={triggerRef} className={styles.ghost} popoverTarget={menuId}>
         Export
       </button>
 

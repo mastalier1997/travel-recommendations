@@ -1,6 +1,7 @@
 'use client';
 
 import { useId, useRef } from 'react';
+import { usePopoverPosition } from '@/lib/hooks/usePopoverPosition';
 import styles from './planner.module.css';
 
 type Props = {
@@ -18,28 +19,28 @@ type Props = {
  * compliance floor and drag is the enhancement on top.
  *
  * Built on the native popover API: Escape, light dismiss and top-layer stacking come
- * for free, which is the whole reason not to hand-roll a menu here.
+ * for free, which is the whole reason not to hand-roll a menu here. On mobile this
+ * renders as a full-width bottom sheet (`.menuSheet` — CSS only, same element, same
+ * popover mechanics) matching the design's own mobile pattern, rather than the small
+ * floating box desktop uses.
  */
 export function CardActions({ name, index, total, onMove, onMoveTo, onRemove }: Props) {
   const id = useId().replace(/:/g, '');
   const menuId = `actions-${id}`;
+  const identityId = `actions-identity-${id}`;
   const ref = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  // hidePopover() alone can drop focus to <body> — return it to the trigger.
+  usePopoverPosition(triggerRef, ref, { width: 216, cssControlsMobile: true });
+
+  // Explicit, not redundant with usePopoverPosition's own refocus-on-close: when
+  // this runs, focus is still on the menu item that was just clicked, not <body>,
+  // so that hook's `activeElement === document.body` check is false here — it
+  // only fires for light-dismiss (Escape, click-outside), where nothing else
+  // ever focuses anything.
   const close = () => {
     ref.current?.hidePopover();
     triggerRef.current?.focus();
-  };
-
-  // Anchor positioning (`anchor()`) is not portable yet, so place it by hand on open.
-  const position = () => {
-    const t = triggerRef.current;
-    const m = ref.current;
-    if (!t || !m) return;
-    const r = t.getBoundingClientRect();
-    m.style.left = `${Math.max(8, r.right - 216)}px`;
-    m.style.top = `${r.bottom + 6}px`;
   };
 
   return (
@@ -49,13 +50,22 @@ export function CardActions({ name, index, total, onMove, onMoveTo, onRemove }: 
         ref={triggerRef}
         className={styles.actionsTrigger}
         popoverTarget={menuId}
-        onClick={position}
         aria-label={`Actions for stop ${index + 1}, ${name}`}
       >
         <span aria-hidden="true">⋯</span>
       </button>
 
-      <div id={menuId} popover="auto" ref={ref} className={styles.menu}>
+      <div
+        id={menuId}
+        popover="auto"
+        ref={ref}
+        className={`${styles.menu} ${styles.menuSheet}`}
+        aria-labelledby={identityId}
+      >
+        <p id={identityId} className={styles.menuIdentity}>
+          {name}
+        </p>
+
         <button
           type="button"
           className={styles.menuItem}
@@ -108,6 +118,14 @@ export function CardActions({ name, index, total, onMove, onMoveTo, onRemove }: 
           }}
         >
           Remove from plan
+        </button>
+
+        {/* Mobile-only (hidden by CSS on desktop, not conditional render — avoids a
+            hydration mismatch from useIsMobile). A full-bleed sheet can't be reliably
+            dismissed by tapping "outside" it, and not everyone can reach Escape —
+            this is the one dismissal guaranteed to work for anyone. */}
+        <button type="button" className={styles.menuCancel} onClick={close}>
+          Cancel
         </button>
       </div>
     </>

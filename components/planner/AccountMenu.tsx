@@ -2,6 +2,7 @@
 
 import { useId, useRef } from 'react';
 import { signOut } from '@/app/login/actions';
+import { usePopoverPosition } from '@/lib/hooks/usePopoverPosition';
 import styles from './planner.module.css';
 
 type Props = {
@@ -15,14 +16,7 @@ export function AccountMenu({ email }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  const position = () => {
-    const t = triggerRef.current;
-    const m = ref.current;
-    if (!t || !m) return;
-    const r = t.getBoundingClientRect();
-    m.style.left = `${Math.max(8, r.right - 216)}px`;
-    m.style.top = `${r.bottom + 6}px`;
-  };
+  usePopoverPosition(triggerRef, ref, { width: 216 });
 
   const initials = email.slice(0, 2).toUpperCase();
 
@@ -33,7 +27,6 @@ export function AccountMenu({ email }: Props) {
         ref={triggerRef}
         className={styles.avatar}
         popoverTarget={menuId}
-        onClick={position}
         aria-label={`Account: ${email}`}
       >
         <span aria-hidden="true">{initials}</span>

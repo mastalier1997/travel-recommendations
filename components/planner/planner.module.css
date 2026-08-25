@@ -516,6 +516,18 @@
   border: 1px solid var(--border-control);
   border-radius: var(--radius);
   box-shadow: 0 16px 36px -14px rgba(var(--shadow-rgb), 0.35);
+  /* Belt-and-braces for the rare menu (or narrow viewport) too tall to ever fully
+     fit — lib/hooks/usePopoverPosition.ts clamps into the viewport, this makes
+     the overflow scrollable instead of clipped. */
+  max-height: calc(100dvh - 16px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* Hidden until usePopoverPosition has actually measured and placed it — avoids
+     a flash at whatever position (or none) was last computed. */
+  visibility: hidden;
+}
+.menu[data-placed='true'] {
+  visibility: visible;
 }
 .menuItem {
   display: block;
@@ -574,6 +586,12 @@
 }
 .menuDanger {
   color: var(--danger-text);
+}
+/* Desktop: hidden — Escape/click-outside are enough with room to spare around
+   the menu. Shown only in the mobile .menuSheet variant below, where a
+   full-bleed sheet leaves no reliable "outside" to tap. */
+.menuCancel {
+  display: none;
 }
 .menuHint {
   display: block;
@@ -978,6 +996,54 @@
   .menuItem {
     min-height: 44px;
   }
+  /* "Move to position" — the other menu items already got bumped above, this
+     one hadn't been. */
+  .menuField {
+    min-height: 44px;
+  }
+  .menuField select {
+    min-height: 40px;
+  }
+
+  /* --- card actions: full-width bottom sheet, matching the design's mobile
+     pattern, instead of the small floating box every other menu uses. Two
+     classes on the same element (.menu.menuSheet) so this only ever wins over
+     the plain .menu mobile width rule above, regardless of source order. ---- */
+  .menu.menuSheet {
+    inset: auto 0 0 0;
+    left: auto;
+    top: auto;
+    width: 100%;
+    max-width: none;
+    max-height: 80dvh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding: 10px 12px max(12px, env(safe-area-inset-bottom));
+  }
+  /* popover="auto" elements get a ::backdrop in the top layer for free — this
+     is the sheet's dim, no extra element needed. Deliberately partial, not a
+     full modal scrim: the sheet isn't focus-trapped (same "not a dialog"
+     reasoning as BottomSheet.tsx), so its visual weight shouldn't overstate
+     that. */
+  .menuSheet::backdrop {
+    background: rgba(20, 17, 14, 0.4);
+  }
+  .menuCancel {
+    display: block;
+    width: 100%;
+    margin-top: 6px;
+    padding: 12px;
+    min-height: 44px;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    color: var(--text);
+    background: var(--bg-sunken);
+    border: 0;
+    border-radius: var(--radius);
+    cursor: pointer;
+  }
+
   .undo {
     margin: 8px 14px 0;
   }

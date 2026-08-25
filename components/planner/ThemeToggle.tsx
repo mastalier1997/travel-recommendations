@@ -2,6 +2,7 @@
 
 import { useId, useRef } from 'react';
 import { useThemePreference, useResolvedTheme } from '@/lib/hooks/useTheme';
+import { usePopoverPosition } from '@/lib/hooks/usePopoverPosition';
 import styles from './planner.module.css';
 
 const OPTIONS: { value: 'light' | 'dark' | 'system'; label: string }[] = [
@@ -23,14 +24,7 @@ export function ThemeToggle() {
   const ref = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  const position = () => {
-    const t = triggerRef.current;
-    const m = ref.current;
-    if (!t || !m) return;
-    const r = t.getBoundingClientRect();
-    m.style.left = `${Math.max(8, r.right - 180)}px`;
-    m.style.top = `${r.bottom + 6}px`;
-  };
+  usePopoverPosition(triggerRef, ref, { width: 180 });
 
   const stateLabel = pref === 'system' ? `System (${resolved})` : pref === 'dark' ? 'Dark' : 'Light';
 
@@ -41,7 +35,6 @@ export function ThemeToggle() {
         ref={triggerRef}
         className={styles.iconButton}
         popoverTarget={menuId}
-        onClick={position}
         aria-label={`Theme: ${stateLabel}`}
       >
         {/* Reflects what's actually rendering right now, not just the stored preference. */}
