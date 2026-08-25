@@ -314,10 +314,44 @@ sticky headers, and per-country subtotals are derived (`lib/plan/groupByCountry.
 `Place.countryCode` (set at geocode time) and `RouteLeg.mode` (for ferry/non-driving legs) are the
 only new persisted fields.
 
+## Turn 2 follow-up — map-side continental treatment, add-a-stop, import polish
+
+A later design revision added the pieces the section above didn't cover, plus a feature this v1 plan
+had put out of scope. All four landed together:
+
+- **Map-side continental treatment**: country borders and city-label suppression (toggled on the
+  basemap's own vector layers via `lib/map/basemapLayers.ts` — verified only for OpenFreeMap's
+  keyless `liberty` style; any other style, including MapTiler's, silently gets none of this rather
+  than a guessed layer id), a real accessible scale bar (`lib/map/scale.ts` — `maplibregl.ScaleControl`
+  lives inside the map's `aria-hidden` canvas, so this is a plain readable element instead), and
+  marker clustering by country group (`lib/map/clusterByGroup.ts`, grouped by itinerary order via
+  `groupByCountry`, deliberately not MapLibre's proximity-based `cluster:true` — that would merge two
+  separate visits to the same country into one blob). `Route.generalized` (declared, previously
+  unused) is now set in `app/api/optimize/route.ts` via an RDP line-simplifier
+  (`lib/geo/simplify.ts`) whenever a route is too large for OSRM's exact solver, and stated in
+  `SummaryBar` rather than only as a map badge — it changes what the distance/time numbers mean.
+- **Add-a-stop search**: `components/planner/AddStopSearch.tsx`, a full ARIA 1.2 combobox (the
+  codebase's other menus are `popover="auto"` static menus, which can't do the
+  `aria-activedescendant` typed-filter pattern this needs). Backed by `/api/nearby` — this
+  **reverses** the "place recommendations via Overpass" out-of-scope line below — scoped to a short
+  leg-window corridor (`lib/plan/suggest.ts`), never the whole route, with its own cache table
+  (`poi_cache`, migration `0003`) and rate-gate provider. Detour cost is a haversine estimate
+  (`lib/routing/detour.ts`), not a live OSRM call per candidate.
+- **Sidebar polish**: a decorative km-by-country proportion bar in `SummaryBar` for grouped plans, and
+  a "peek" partial reveal for country groups over 4 stops (`PlaceList.tsx` — a "+N more" button and a
+  "Showing X of Y · Expand all" footer), independent of the existing collapse/expand state.
+- **Import polish**: a category chip and a distance-outlier warning per geocode candidate
+  (`lib/import/outlier.ts`) in the M3 confirm-locations flow — compared against the other rows in the
+  same import batch, since that flow never receives the existing plan's places, only a count.
+
+Explicitly **not** built: the design's "days/span" stat and "Group by Day" toggle, or per-stop
+"nights" flavor text — no date field exists on `Place`, and multi-day itineraries stay out of scope
+(next section, unchanged).
+
 ## Explicitly out of scope for v1
 
 Multi-day itineraries, opening-hours awareness, time windows, collaboration, offline mode,
-PWA share target, place recommendations via Overpass.
+PWA share target.
 
 ## Complexity
 
