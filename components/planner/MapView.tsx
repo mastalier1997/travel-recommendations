@@ -1,12 +1,28 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import maplibregl, { type LngLatBoundsLike } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Place, Route } from '@/lib/types';
 import { useResolvedTheme } from '@/lib/hooks/useTheme';
 import { MAP_COLORS, mapStyleUrl, resolveMapTheme } from '@/lib/map/mapTheme';
+import { groupByCountry, groupKey } from '@/lib/plan/groupByCountry';
+import { clusterByGroup } from '@/lib/map/clusterByGroup';
+import { zoomBand } from '@/lib/map/zoomBand';
+import { scaleBar } from '@/lib/map/scale';
+import { basemapLayerIds } from '@/lib/map/basemapLayers';
 import styles from './planner.module.css';
+
+/** Below this, individual city/town labels are dropped in favor of the country
+ * context the continental-scale treatment adds instead — matches the design's own
+ * "city labels hidden below zoom 6" wording exactly, so it's a fixed threshold
+ * rather than reusing zoomBand's coarser 3-tier split. */
+const CITY_LABEL_MIN_ZOOM = 6;
+
+/** Single source of truth for the map's starting view — used both to construct
+ * the maplibregl.Map and to seed the mapZoom/centerLat state that drives
+ * clustering/labels/scale before the first 'moveend' fires. */
+const INIT_VIEW = { center: [135.7, 34.9] as [number, number], zoom: 8 };
 
 // No key needed: OpenFreeMap's public instance is keyless and unmetered, so it's
 // a safe default rather than a blank background. Swap in MAPTILER_KEY for nicer
@@ -50,6 +66,16 @@ export function MapView({
   // Reattaching the route layers is route-effect's job; style.load (fired on
   // init AND on every setStyle) just needs to call whatever that latest logic is.
   const applyRouteRef = useRef<() => void>(() => {});
+  // Same pattern for the continental-scale basemap toggles (borders, city labels) —
+  // a setStyle wipes layout-property overrides same as it wipes the route source.
+  const applyBasemapRef = useRef<() => void>(() => {});
+
+  const [mapZoom, setMapZoom] = useState(INIT_VIEW.zoom);
+  const [centerLat, setCenterLat] = useState(INIT_VIEW.center[1]);
+  const groups = useMemo(() => groupByCountry(places, route), [places, route]);
+  const grouped = groups.length > 1;
+  const markerItems = useMemo(() => clusterByGroup(groups, zoomBand(mapZoom)), [groups, mapZoom]);
+  const placeIndexById = useMemo(() => new Map(places.map((p, i) => [p.id, i])), [places]);
 
   // --- init ---------------------------------------------------------------
   useEffect(() => {
@@ -58,8 +84,8 @@ export function MapView({
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: appliedStyleRef.current,
-      center: [135.7, 34.9],
-      zoom: 8,
+      center: INIT_VIEW.center,
+      zoom: INIT_VIEW.zoom,
       // Own controls live outside the aria-hidden subtree; the canvas itself must not
       // be a tab stop or a keyboard target.
       attributionControl: false,
@@ -69,7 +95,14 @@ export function MapView({
 
     map.getCanvas().setAttribute('aria-hidden', 'true');
     map.getCanvas().tabIndex = -1;
-    map.on('style.load', () => applyRouteRef.current());
+    map.on('style.load', () => {
+      applyRouteRef.current();
+      applyBasemapRef.current();
+    });
+    map.on('moveend', () => {
+      setMapZoom(map.getZoom());
+      setCenterLat(map.getCenter().lat);
+    });
 
     return () => {
       markersRef.current.forEach((m) => m.remove());
@@ -180,48 +213,90 @@ export function MapView({
     if (map.isStyleLoaded()) apply();
   }, [route, routeStale, mapTheme, places]);
 
-  // --- markers ------------------------------------------------------------
+  // --- continental-scale basemap toggles (borders, city labels) ------------
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const { boundaryLayerIds, cityLabelLayerIds } = basemapLayerIds(styleUrl);
+
+    const apply = () => {
+      // Country borders only when a plan actually spans more than one country —
+      // for a single-region trip, every stop sharing one border says nothing.
+      for (const id of boundaryLayerIds) {
+        if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', grouped ? 'visible' : 'none');
+      }
+      for (const id of cityLabelLayerIds) {
+        if (map.getLayer(id)) {
+          map.setLayoutProperty(id, 'visibility', mapZoom >= CITY_LABEL_MIN_ZOOM ? 'visible' : 'none');
+        }
+      }
+    };
+
+    applyBasemapRef.current = apply;
+    if (map.isStyleLoaded()) apply();
+  }, [styleUrl, grouped, mapZoom]);
+
+  // --- markers --------------------------------------------------------------
+  // Rendered from markerItems (lib/map/clusterByGroup), not one-per-place — at a
+  // zoomed-out band a dense country group collapses into one cluster badge. Still
+  // DOM markers, not a MapLibre symbol layer: they must survive a theme-triggered
+  // setStyle the same way the old per-place pins did (see the restyle effect above).
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
     const live = new Set<string>();
+    const groupPlaces = new Map(groups.map((g) => [groupKey(g), g.places]));
+    const placeById = new Map(places.map((p) => [p.id, p]));
 
-    places.forEach((p, i) => {
-      if (p.lat === null || p.lon === null) return;
-      live.add(p.id);
+    markerItems.forEach((item) => {
+      const key = item.kind === 'pin' ? item.placeId : `cluster:${item.key}`;
+      live.add(key);
 
-      let marker = markersRef.current.get(p.id);
+      let marker = markersRef.current.get(key);
       if (!marker) {
         const el = document.createElement('div');
-        el.className = styles.pin;
-        // Pins are a pointer shortcut, nothing more. Everything they convey — order,
-        // name, distance — is text in the list.
+        el.className = item.kind === 'pin' ? styles.pin : styles.clusterPin;
+        // Pins/badges are a pointer shortcut, nothing more. Order, name, country and
+        // count are all real text in the list — a cluster badge adds no new fact
+        // that isn't already in that group's sticky heading.
         el.setAttribute('aria-hidden', 'true');
         el.tabIndex = -1;
-        el.addEventListener('click', (e) => {
-          e.stopPropagation();
-          onSelectRef.current(p.id);
-        });
-        marker = new maplibregl.Marker({ element: el }).setLngLat([p.lon, p.lat]).addTo(map);
-        markersRef.current.set(p.id, marker);
+        marker = new maplibregl.Marker({ element: el }).setLngLat([item.lon, item.lat]).addTo(map);
+        markersRef.current.set(key, marker);
       } else {
-        marker.setLngLat([p.lon, p.lat]);
+        marker.setLngLat([item.lon, item.lat]);
       }
 
       const el = marker.getElement();
-      el.textContent = String(i + 1);
-      el.dataset.unresolved = String(p.status === 'unresolved');
-      el.dataset.selected = String(p.id === selectedStopId);
-    });
-
-    markersRef.current.forEach((m, id) => {
-      if (!live.has(id)) {
-        m.remove();
-        markersRef.current.delete(id);
+      el.onclick = null;
+      if (item.kind === 'pin') {
+        const place = placeById.get(item.placeId);
+        el.textContent = String((placeIndexById.get(item.placeId) ?? 0) + 1);
+        el.dataset.unresolved = String(place?.status === 'unresolved');
+        el.dataset.selected = String(item.placeId === selectedStopId);
+        el.onclick = (e) => {
+          e.stopPropagation();
+          onSelectRef.current(item.placeId);
+        };
+      } else {
+        el.textContent = `${item.count} · ${item.countryLabel}`;
+        el.dataset.selected = 'false';
+        el.onclick = (e) => {
+          e.stopPropagation();
+          const pts = (groupPlaces.get(item.key) ?? []).filter((p) => p.lat !== null && p.lon !== null);
+          if (pts.length) fitTo(map, pts, reducedMotion);
+        };
       }
     });
-  }, [places, selectedStopId]);
+
+    markersRef.current.forEach((m, key) => {
+      if (!live.has(key)) {
+        m.remove();
+        markersRef.current.delete(key);
+      }
+    });
+  }, [markerItems, groups, places, placeIndexById, selectedStopId, reducedMotion]);
 
   // --- fit to all stops on first paint ------------------------------------
   const fittedRef = useRef(false);
@@ -268,9 +343,29 @@ export function MapView({
     if (map) fitTo(map, places.filter((p) => p.lat !== null), reducedMotion);
   };
 
+  const scale = scaleBar(mapZoom, centerLat);
+  // Only claim borders are on when this style actually has a border layer to show —
+  // basemapLayerIds returns [] for anything but the verified OpenFreeMap style (see
+  // its module comment), and the toggle effect above is then a silent no-op.
+  const showBordersBadge = grouped && basemapLayerIds(styleUrl).boundaryLayerIds.length > 0;
+
   return (
     <div className={styles.mapWrap}>
       <div ref={containerRef} className={styles.mapCanvas} aria-hidden="true" />
+
+      {/* Purely visual chrome — decorative like the rest of the map (see the module
+          comment on markers above). The facts it restates (country names, whether
+          this is a multi-country trip, distance totals) already exist as real text
+          in the sidebar, so none of this needs its own accessible equivalent. */}
+      {showBordersBadge && (
+        <p className={styles.mapBadge} aria-hidden="true">
+          Country borders on · city labels hidden below zoom {CITY_LABEL_MIN_ZOOM}
+        </p>
+      )}
+
+      <p className={styles.mapScale} aria-hidden="true" style={{ width: `${scale.widthPx}px` }}>
+        {scale.label}
+      </p>
 
       {/* Controls and attribution sit outside the aria-hidden subtree on purpose. */}
       <div className={styles.mapControls}>
@@ -280,8 +375,8 @@ export function MapView({
         <button type="button" onClick={() => zoom(-1)} aria-label="Zoom out">
           −
         </button>
-        <button type="button" onClick={fitAll} aria-label="Fit map to all stops">
-          ⤢
+        <button type="button" className={styles.fitAllButton} onClick={fitAll}>
+          Fit whole trip
         </button>
       </div>
 

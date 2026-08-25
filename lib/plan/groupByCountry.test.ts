@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { Route, RouteLeg } from '@/lib/types';
-import { groupByCountry } from './groupByCountry';
+import { groupByCountry, groupKey } from './groupByCountry';
 import { place } from '@/lib/fixtures/place';
 
 const AT = '2026-08-02T09:00:00.000Z';
@@ -76,5 +76,18 @@ describe('groupByCountry', () => {
   it('resolves a country label via Intl.DisplayNames', () => {
     const groups = groupByCountry([p('a', 'IT')], null);
     expect(groups[0].countryLabel).toBe('Italy');
+  });
+});
+
+describe('groupKey', () => {
+  it('is stable for the same group and distinguishes different ones — shared by the sidebar and the map', () => {
+    const [at, de] = groupByCountry([p('a', 'AT'), p('b', 'DE')], null);
+    expect(groupKey(at)).toBe(groupKey(at));
+    expect(groupKey(at)).not.toBe(groupKey(de));
+  });
+
+  it('falls back to "unknown" for a null country code', () => {
+    const [group] = groupByCountry([p('a', null)], null);
+    expect(groupKey(group)).toBe('unknown-0');
   });
 });

@@ -66,6 +66,9 @@ export function PlaceList({
   placesRef.current = places;
 
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  // A group past PEEK_N stops shows only the first PEEK_N until its key lands
+  // here — independent of `collapsed` (0 shown) and orthogonal to it.
+  const [peeked, setPeeked] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState('');
 
   // Both the filter/chips bar and each country heading are sticky — stack them by
@@ -190,6 +193,18 @@ export function PlaceList({
       return next;
     });
 
+  // Focus lands on the first newly-revealed card — same "focus what just appeared"
+  // rule Planner.tsx's undoRemove/focusIndex follows for a removed card's neighbor.
+  const expandPeek = (key: string, firstNewId: string) => {
+    setPeeked((cur) => new Set(cur).add(key));
+    requestAnimationFrame(() => refs.current.get(firstNewId)?.focus({ preventScroll: true }));
+  };
+
+  const expandAll = () => {
+    setCollapsed(new Set());
+    setPeeked(new Set(groups.map(groupKey)));
+  };
+
   const jumpTo = (g: CountryGroup) => (e: React.MouseEvent) => {
     e.preventDefault();
     const key = groupKey(g);
@@ -229,10 +244,21 @@ export function PlaceList({
     );
   }
 
-  const visibleIds = groups.flatMap((g) =>
-    collapsed.has(groupKey(g)) ? [] : g.places.filter(matches).map((p) => p.id),
-  );
+  // Peek only applies while not filtering — a filter's whole point is finding a
+  // specific stop, so it always shows every match rather than truncating them.
+  const PEEK_N = 4;
+  const visiblePlacesFor = (g: CountryGroup) => {
+    const key = groupKey(g);
+    if (collapsed.has(key)) return [];
+    const shown = g.places.filter(matches);
+    const peeking = !filterLower && shown.length > PEEK_N && !peeked.has(key);
+    return peeking ? shown.slice(0, PEEK_N) : shown;
+  };
+
+  const visibleIds = groups.flatMap((g) => visiblePlacesFor(g).map((p) => p.id));
   const totalMatches = groups.reduce((n, g) => n + g.places.filter(matches).length, 0);
+  const visibleCount = groups.reduce((n, g) => n + visiblePlacesFor(g).length, 0);
+  const collapsedLabels = groups.filter((g) => collapsed.has(groupKey(g))).map((g) => g.countryLabel);
 
   return (
     <>
@@ -276,6 +302,8 @@ export function PlaceList({
               const key = groupKey(g);
               const isCollapsed = collapsed.has(key);
               const shownPlaces = g.places.filter(matches);
+              const visiblePlaces = visiblePlacesFor(g);
+              const isPeeking = !isCollapsed && visiblePlaces.length < shownPlaces.length;
 
               return (
                 <li key={key} id={key} className={styles.countryGroup} aria-labelledby={`${key}-h`}>
@@ -323,12 +351,31 @@ export function PlaceList({
 
                   {!isCollapsed && (
                     <ol id={`${key}-body`} role="list" className={styles.list}>
-                      {shownPlaces.map((p) => {
+                      {visiblePlaces.map((p) => {
                         const globalIndex = places.findIndex((x) => x.id === p.id);
                         const suppressLeg = !!g.entryLeg && p.id === g.places[0].id;
                         return card(p, globalIndex, { dragDisabled: !!filterLower, suppressLeg });
                       })}
                     </ol>
+                  )}
+
+                  {isPeeking && (
+                    <button
+                      type="button"
+                      className={styles.peekMore}
+                      aria-controls={`${key}-body`}
+                      onClick={() => expandPeek(key, shownPlaces[visiblePlaces.length].id)}
+                    >
+                      <span className={styles.peekMoreTitle}>
+                        +{shownPlaces.length - visiblePlaces.length} more in {g.countryLabel}
+                      </span>
+                      <span className={styles.peekMoreNames}>
+                        {shownPlaces
+                          .slice(visiblePlaces.length)
+                          .map((p) => (p.status === 'unresolved' ? p.raw : p.name))
+                          .join(' · ')}
+                      </span>
+                    </button>
                   )}
                 </li>
               );
@@ -336,6 +383,18 @@ export function PlaceList({
           </ol>
         </SortableContext>
       </DndContext>
+
+      {!filterLower && visibleCount < totalMatches && (
+        <div className={styles.expandAllRow}>
+          <p>
+            Showing {visibleCount} of {totalMatches} stops
+            {collapsedLabels.length > 0 && ` · ${collapsedLabels.join(' and ')} collapsed`}
+          </p>
+          <button type="button" onClick={expandAll}>
+            Expand all
+          </button>
+        </div>
+      )}
     </>
   );
 }

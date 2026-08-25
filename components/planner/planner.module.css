@@ -305,6 +305,19 @@
   font-size: 11px;
   color: var(--text-subtle);
 }
+.countryBar {
+  display: flex;
+  gap: 1px;
+  margin-top: 8px;
+  height: 6px;
+  border-radius: var(--pill);
+  overflow: hidden;
+  background: var(--bg-sunken);
+}
+.countryBarSegment {
+  height: 100%;
+  background: var(--accent-strong);
+}
 .summaryActions {
   display: flex;
   align-items: center;
@@ -744,6 +757,60 @@
   border-radius: var(--radius);
 }
 
+.peekMore {
+  display: block;
+  width: 100%;
+  margin: 2px 0 8px;
+  padding: 9px 10px;
+  font: inherit;
+  text-align: left;
+  color: var(--text);
+  background: var(--bg-raised);
+  border: 1px dashed var(--border-control);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.peekMoreTitle {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--accent-strong);
+}
+.peekMoreNames {
+  display: block;
+  margin-top: 1px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.expandAllRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 4px;
+  padding-top: 11px;
+  border-top: 1px solid var(--border-hairline-strong);
+}
+.expandAllRow p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-subtle);
+}
+.expandAllRow button {
+  flex: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-strong);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
 /* --- bottom sheet (mobile only) ----------------------------------------- */
 
 .sheet {
@@ -825,6 +892,68 @@
   background: var(--pin-unresolved-bg);
   color: var(--amber-chip-text);
   border-color: var(--amber-edge);
+}
+
+/* A collapsed country group at a zoomed-out band — a pill instead of a circle so
+   it never reads as "just another numbered stop". */
+.clusterPin {
+  display: flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: var(--pill);
+  background: var(--accent-strong);
+  color: var(--text-on-accent);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 2px solid var(--pin-ring);
+  outline: 1px solid var(--text);
+  box-shadow: 0 3px 8px rgba(60, 30, 10, 0.28);
+  cursor: pointer;
+}
+
+/* --- continental-scale map chrome (borders/labels badge, scale bar) ----- */
+
+.mapBadge {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  z-index: 2;
+  margin: 0;
+  padding: 5px 10px;
+  font-size: 11px;
+  color: var(--text);
+  background: var(--surface-translucent);
+  border: 1px solid var(--border-control);
+  border-radius: var(--pill);
+  backdrop-filter: blur(6px);
+}
+
+.mapScale {
+  position: absolute;
+  left: 12px;
+  bottom: 6px;
+  z-index: 2;
+  margin: 0;
+  padding-top: 3px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-subtle);
+  text-align: center;
+  border-top: 2px solid var(--text-subtle);
+}
+
+/* Two classes beats .mapControls button's one-class-one-element specificity,
+   without reaching for !important. */
+.mapControls .fitAllButton {
+  width: auto;
+  height: 32px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 /* No hover on touch, so a hover-revealed control is an unavailable one. */

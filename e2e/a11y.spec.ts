@@ -3,7 +3,7 @@ import AxeBuilder from '@axe-core/playwright';
 
 // Contrast is computed, not just structural — a pass in light tells you nothing about
 // dark. Every fixture route runs under both color schemes.
-const FIXTURES = ['sample', 'single-area', 'multi-country', 'large-trip', 'import'];
+const FIXTURES = ['sample', 'single-area', 'multi-country', 'large-trip', 'peek', 'import'];
 const SCHEMES = ['light', 'dark'] as const;
 
 // axe never sees inside a closed popover — this scans them open too, which also

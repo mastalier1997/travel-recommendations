@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import type { Place, Route } from '@/lib/types';
 import { MAX_STOPS_SOLVED } from '@/lib/types';
 import {
@@ -8,6 +9,7 @@ import {
   formatDurationLong,
   formatDurationSpoken,
 } from '@/lib/format';
+import { groupByCountry, groupKey } from '@/lib/plan/groupByCountry';
 import styles from './planner.module.css';
 
 type Props = {
@@ -19,6 +21,11 @@ type Props = {
 };
 
 export function SummaryBar({ places, route, routeStale, onOptimize, busy }: Props) {
+  // Recomputed here rather than lifted to shared state — same call PlaceList and
+  // MapView each make on their own; groupByCountry is cheap and pure.
+  const groups = useMemo(() => groupByCountry(places, route), [places, route]);
+  const grouped = groups.length > 1;
+
   const needsReview = places.filter((p) => p.status === 'unresolved').length;
   // Below this, order-solving always happens — exactly (OSRM /trip) under 12 stops,
   // heuristically (lib/routing/solve.ts) up to this cap. That distinction is
@@ -64,6 +71,28 @@ export function SummaryBar({ places, route, routeStale, onOptimize, busy }: Prop
         </p>
         {route?.generalized && (
           <p className={styles.summaryNote}>Route simplified for this zoom — zoom in on the map for turn-by-turn shape</p>
+        )}
+
+        {/* Decorative: every group's own km/time already exists as real text on its
+            sticky heading in the list below (PlaceList's countryToggle) — this bar
+            adds an at-a-glance proportion, not a new fact. */}
+        {grouped && route && route.totalDistanceM > 0 && (
+          <div className={styles.countryBar} aria-hidden="true">
+            {groups.map((g) => {
+              // g.distanceM excludes the leg crossing INTO this group (groupByCountry
+              // attributes that to entryLeg, not the group) — add it back so segment
+              // widths sum to the route's real total instead of undercounting by
+              // every border crossing.
+              const segmentM = g.distanceM + (g.entryLeg?.distanceM ?? 0);
+              return (
+                <span
+                  key={groupKey(g)}
+                  className={styles.countryBarSegment}
+                  style={{ width: `${(segmentM / route.totalDistanceM) * 100}%` }}
+                />
+              );
+            })}
+          </div>
         )}
       </div>
 
