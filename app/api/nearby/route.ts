@@ -34,13 +34,21 @@ export async function POST(req: Request) {
     throw err;
   }
 
+  let pois: NearbyPoi[];
   try {
-    const pois = await searchOverpass(corridor, radiusM);
-    await writePoiCache(corridor, radiusM, pois);
-    return Response.json({ pois } satisfies NearbyResponse);
-  } catch {
+    pois = await searchOverpass(corridor, radiusM);
+  } catch (err) {
+    console.error('[nearby] Overpass request failed:', err);
     return Response.json({ error: 'Could not reach the places service.' } satisfies ApiError, {
       status: 502,
     });
   }
+
+  try {
+    await writePoiCache(corridor, radiusM, pois);
+  } catch (err) {
+    console.error('[nearby] cache write failed:', err);
+  }
+
+  return Response.json({ pois } satisfies NearbyResponse);
 }

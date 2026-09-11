@@ -95,7 +95,8 @@ export async function POST(req: Request) {
       order,
       route: withinExact ? route : generalize(route),
     } satisfies OptimizeResponse);
-  } catch {
+  } catch (err) {
+    console.error('[optimize] OSRM request failed:', err);
     return Response.json({ error: 'Could not reach the routing service.' }, { status: 502 });
   }
 }
