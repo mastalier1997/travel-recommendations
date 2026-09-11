@@ -51,15 +51,24 @@ export async function POST(req: Request) {
     }
   }
 
+  let candidates: Candidate[];
   try {
-    const candidates =
+    candidates =
       provider === 'maptiler' ? await searchMapTiler(q, near) : await searchNominatim(q, near);
-    // Cache even a zero-result response — see cache.ts's shorter TTL for misses.
-    await writeCache(provider, q, candidates, near);
-    return Response.json({ candidates } satisfies GeocodeResponse);
-  } catch {
+  } catch (err) {
+    console.error(`[geocode] ${provider} request failed:`, err);
     return Response.json({ error: 'Could not reach the geocoder.' } satisfies ApiError, {
       status: 502,
     });
   }
+
+  // Cache even a zero-result response — see cache.ts's shorter TTL for misses. A
+  // write failure shouldn't fail a response that already has good candidates.
+  try {
+    await writeCache(provider, q, candidates, near);
+  } catch (err) {
+    console.error('[geocode] cache write failed:', err);
+  }
+
+  return Response.json({ candidates } satisfies GeocodeResponse);
 }
