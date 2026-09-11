@@ -324,9 +324,14 @@ had put out of scope. All four landed together:
   keyless `liberty` style; any other style, including MapTiler's, silently gets none of this rather
   than a guessed layer id), a real accessible scale bar (`lib/map/scale.ts` — `maplibregl.ScaleControl`
   lives inside the map's `aria-hidden` canvas, so this is a plain readable element instead), and
-  marker clustering by country group (`lib/map/clusterByGroup.ts`, grouped by itinerary order via
-  `groupByCountry`, deliberately not MapLibre's proximity-based `cluster:true` — that would merge two
-  separate visits to the same country into one blob). `Route.generalized` (declared, previously
+  marker clustering (`lib/map/clusterByGroup.ts`) — `groupByCountry`'s itinerary-order groups stay a
+  hard outer boundary (deliberately not MapLibre's proximity-based `cluster:true`, which would merge
+  two separate visits to the same country into one blob), but within a group, stops only merge when
+  they're actually within a fixed on-screen pixel radius of each other at the current zoom
+  (`lib/map/mercator.ts` — Web Mercator pixel projection, antimeridian-safe). The original version
+  collapsed a whole group above a flat stop-count once zoomed past a fixed band, regardless of real
+  distance — a country group spanning hundreds of km (Jakarta to Bali, say) would vanish into one
+  badge instead of staying as visibly separate stops. `Route.generalized` (declared, previously
   unused) is now set in `app/api/optimize/route.ts` via an RDP line-simplifier
   (`lib/geo/simplify.ts`) whenever a route is too large for OSRM's exact solver, and stated in
   `SummaryBar` rather than only as a map badge — it changes what the distance/time numbers mean.

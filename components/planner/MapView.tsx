@@ -6,18 +6,22 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Place, Route } from '@/lib/types';
 import { useResolvedTheme } from '@/lib/hooks/useTheme';
 import { MAP_COLORS, mapStyleUrl, resolveMapTheme } from '@/lib/map/mapTheme';
-import { groupByCountry, groupKey } from '@/lib/plan/groupByCountry';
+import { groupByCountry } from '@/lib/plan/groupByCountry';
 import { clusterByGroup } from '@/lib/map/clusterByGroup';
-import { zoomBand } from '@/lib/map/zoomBand';
 import { scaleBar } from '@/lib/map/scale';
 import { basemapLayerIds } from '@/lib/map/basemapLayers';
 import styles from './planner.module.css';
 
 /** Below this, individual city/town labels are dropped in favor of the country
  * context the continental-scale treatment adds instead — matches the design's own
- * "city labels hidden below zoom 6" wording exactly, so it's a fixed threshold
- * rather than reusing zoomBand's coarser 3-tier split. */
+ * "city labels hidden below zoom 6" wording exactly, so it's a fixed threshold. */
 const CITY_LABEL_MIN_ZOOM = 6;
+
+/** Marker clustering (lib/map/clusterByGroup.ts) recomputes on every zoom tick;
+ * rounding to quarter-zoom steps stops trivial mouse-wheel jitter from thrashing
+ * marker DOM on every 'moveend' without meaningfully changing what clusters. */
+const ZOOM_MEMO_STEP = 0.25;
+const quantizeZoom = (z: number) => Math.round(z / ZOOM_MEMO_STEP) * ZOOM_MEMO_STEP;
 
 /** Single source of truth for the map's starting view — used both to construct
  * the maplibregl.Map and to seed the mapZoom/centerLat state that drives
@@ -74,7 +78,11 @@ export function MapView({
   const [centerLat, setCenterLat] = useState(INIT_VIEW.center[1]);
   const groups = useMemo(() => groupByCountry(places, route), [places, route]);
   const grouped = groups.length > 1;
-  const markerItems = useMemo(() => clusterByGroup(groups, zoomBand(mapZoom)), [groups, mapZoom]);
+  const clusterZoom = quantizeZoom(mapZoom);
+  const markerItems = useMemo(
+    () => clusterByGroup(groups, clusterZoom, selectedStopId),
+    [groups, clusterZoom, selectedStopId],
+  );
   const placeIndexById = useMemo(() => new Map(places.map((p, i) => [p.id, i])), [places]);
 
   // --- init ---------------------------------------------------------------
@@ -246,7 +254,6 @@ export function MapView({
     if (!map) return;
 
     const live = new Set<string>();
-    const groupPlaces = new Map(groups.map((g) => [groupKey(g), g.places]));
     const placeById = new Map(places.map((p) => [p.id, p]));
 
     markerItems.forEach((item) => {
@@ -257,6 +264,7 @@ export function MapView({
       if (!marker) {
         const el = document.createElement('div');
         el.className = item.kind === 'pin' ? styles.pin : styles.clusterPin;
+        el.dataset.markerKind = item.kind;
         // Pins/badges are a pointer shortcut, nothing more. Order, name, country and
         // count are all real text in the list — a cluster badge adds no new fact
         // that isn't already in that group's sticky heading.
@@ -280,11 +288,17 @@ export function MapView({
           onSelectRef.current(item.placeId);
         };
       } else {
-        el.textContent = `${item.count} · ${item.countryLabel}`;
+        el.textContent = item.label;
         el.dataset.selected = 'false';
         el.onclick = (e) => {
           e.stopPropagation();
-          const pts = (groupPlaces.get(item.key) ?? []).filter((p) => p.lat !== null && p.lon !== null);
+          // Fit to exactly this badge's own members (never a group-key lookup) so a
+          // click always zooms to what's actually represented by the marker clicked.
+          // ponytail: no explicit "guarantee de-clustering" zoom math here — fitTo's
+          // existing maxZoom:14 cap already separates any two real, non-duplicate
+          // stops (40px cluster radius is well under 400m at zoom 14). Revisit only
+          // if a report surfaces stops that share near-identical coordinates.
+          const pts = item.memberIds.flatMap((id) => placeById.get(id) ?? []);
           if (pts.length) fitTo(map, pts, reducedMotion);
         };
       }
@@ -296,7 +310,7 @@ export function MapView({
         markersRef.current.delete(key);
       }
     });
-  }, [markerItems, groups, places, placeIndexById, selectedStopId, reducedMotion]);
+  }, [markerItems, places, placeIndexById, selectedStopId, reducedMotion]);
 
   // --- fit to all stops on first paint ------------------------------------
   const fittedRef = useRef(false);
@@ -400,11 +414,23 @@ export function MapView({
 function fitTo(map: maplibregl.Map, places: Place[], instant: boolean) {
   const pts = places.filter((p) => p.lat !== null && p.lon !== null);
   if (pts.length === 0) return;
-  const lons = pts.map((p) => p.lon as number);
   const lats = pts.map((p) => p.lat as number);
+  // Antimeridian-safe, same technique as lib/map/mercator.ts's lonLatCentroid: unwrap
+  // every longitude relative to the first point before taking min/max, so a trip like
+  // Tokyo <-> Honolulu gets the short bounding box, not one spanning the wrong 340° of
+  // the globe. maplibregl.LngLatBounds represents a crossing box as west > east —
+  // wrapping each unwrapped extreme back into [-180, 180) produces exactly that.
+  const first = pts[0].lon as number;
+  const unwrappedLons = pts.map((p) => {
+    let d = (p.lon as number) - first;
+    if (d > 180) d -= 360;
+    if (d < -180) d += 360;
+    return first + d;
+  });
+  const wrap = (lon: number) => (((lon + 180) % 360) + 360) % 360 - 180;
   const bounds: LngLatBoundsLike = [
-    [Math.min(...lons), Math.min(...lats)],
-    [Math.max(...lons), Math.max(...lats)],
+    [wrap(Math.min(...unwrappedLons)), Math.min(...lats)],
+    [wrap(Math.max(...unwrappedLons)), Math.max(...lats)],
   ];
   map.fitBounds(bounds, { padding: 72, duration: instant ? 0 : 500, maxZoom: 14 });
 }

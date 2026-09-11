@@ -5,6 +5,7 @@ import { SINGLE_AREA_PLAN } from '@/lib/fixtures/single-area-plan';
 import { MULTI_COUNTRY_PLAN } from '@/lib/fixtures/multi-country-plan';
 import { LARGE_TRIP_PLAN } from '@/lib/fixtures/large-trip-plan';
 import { PEEK_PLAN } from '@/lib/fixtures/peek-plan';
+import { KL_BALI_PLAN } from '@/lib/fixtures/kl-bali-plan';
 
 const FIXTURES = {
   sample: SAMPLE_PLAN,
@@ -12,6 +13,7 @@ const FIXTURES = {
   'multi-country': MULTI_COUNTRY_PLAN,
   'large-trip': LARGE_TRIP_PLAN,
   peek: PEEK_PLAN,
+  'kl-bali': KL_BALI_PLAN,
 };
 
 // ponytail: local-only fixture preview, no DB writes — same NODE_ENV gate as

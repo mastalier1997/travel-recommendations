@@ -990,6 +990,11 @@
     width: 44px;
     height: 44px;
   }
+  /* Zoom +/- are the primary non-gesture zoom path on touch — same 44px floor. */
+  .mapControls button {
+    width: 44px;
+    height: 44px;
+  }
   .menu {
     width: min(280px, calc(100vw - 24px));
   }
