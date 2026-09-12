@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import type { SaveResult } from '@/lib/hooks/useAutosave';
 import type { Place, Route } from '@/lib/types';
+import { normalizeTitle, type RenameResult } from '@/lib/plan/title';
 
 /**
  * Conditional on `version`, so a second tab holding a stale copy loses instead of
@@ -78,20 +79,42 @@ export async function commitImportedPlaces(
   return { ok: true, version: data.version as number };
 }
 
-export async function renamePlan(id: string, title: string): Promise<SaveResult> {
-  const supabase = await createClient();
-  const clean = title.trim().slice(0, 120) || 'Untitled plan';
+/**
+ * Deliberately NOT version-conditional, unlike savePlan above — and deliberately
+ * doesn't touch `updated_at` (a rename isn't a content edit; both `/plans` and the
+ * plan switcher sort by it, so bumping it would silently reorder those lists out
+ * from under the user).
+ *
+ * A version guard here would be actively harmful, not just redundant: rename would
+ * have to bump `version` to mean anything, and the next debounced places/route
+ * autosave (which still holds the pre-rename version) would then be rejected as a
+ * conflict — terminal, per lib/plan/saveState.ts — silently losing real itinerary
+ * edits over a title change. savePlan's guard exists because it's a whole-document
+ * replacement from a client-held snapshot; this writes one scalar the user can see
+ * as they type it, so last-write-wins is the correct semantics, not a compromise.
+ *
+ * Returns a dedicated result type rather than SaveResult on purpose — reusing that
+ * shape risks a `version`/`conflict` value from this action leaking into
+ * useAutosave's conflict handling for a save it never made.
+ */
+export async function renamePlan(id: string, title: string): Promise<RenameResult> {
+  const normalized = normalizeTitle(title);
+  if (!normalized.ok) return { ok: false, error: 'Enter a name for this plan.' };
 
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from('plans')
-    .update({ title: clean, updated_at: new Date().toISOString() })
+    .update({ title: normalized.title })
     .eq('id', id)
-    .select('version')
+    .select('title')
     .maybeSingle();
 
   if (error) return { ok: false, error: error.message };
-  if (!data) return { ok: false, conflict: true };
+  // No version predicate to fail on, so zero rows means the plan is gone or RLS
+  // hides it — not a conflict with someone else's edit.
+  if (!data) return { ok: false, missing: true };
 
   revalidatePath('/plans');
-  return { ok: true, version: data.version as number };
+  revalidatePath(`/plans/${id}`);
+  return { ok: true, title: data.title as string };
 }

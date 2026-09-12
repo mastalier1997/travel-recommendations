@@ -7,9 +7,13 @@ const FIXTURES = ['sample', 'single-area', 'multi-country', 'large-trip', 'peek'
 const SCHEMES = ['light', 'dark'] as const;
 
 // axe never sees inside a closed popover — this scans them open too, which also
-// covers ExportMenu/ThemeToggle/AccountMenu/CardActions.
+// covers ExportMenu/ThemeToggle/AccountMenu/CardActions. "Rename plan" isn't a
+// native popover="auto" element (see Header.tsx's PlanTitle) — it's plain React
+// state, deliberately not part of the popover light-dismiss chain (typed text
+// must survive an outside click, unlike a stateless command menu) — so it's
+// left open alongside whichever popover gets clicked last, on purpose.
 async function openPopovers(page: Page) {
-  for (const name of [/^Export$/, /^Theme:/, /^Account:/, /^Actions for stop/]) {
+  for (const name of [/^Export$/, /^Theme:/, /^Account:/, /^Actions for stop/, /^Rename plan,/]) {
     const trigger = page.getByRole('button', { name });
     if (await trigger.count()) await trigger.first().click();
   }

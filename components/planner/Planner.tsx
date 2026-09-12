@@ -6,6 +6,7 @@ import { isRouteStale, orderHash } from '@/lib/routing/order';
 import { focusIndexAfterRemove, insertAt, moveTo, removeAt } from '@/lib/plan/reorder';
 import { useIsMobile, usePrefersReducedMotion } from '@/lib/hooks/useMediaQuery';
 import { useAutosave, type SaveResult } from '@/lib/hooks/useAutosave';
+import type { RenameResult } from '@/lib/plan/title';
 import { MapView } from './MapView';
 import { PlaceList } from './PlaceList';
 import { SummaryBar } from './SummaryBar';
@@ -41,13 +42,16 @@ type Props = {
     version: number;
   }) => Promise<SaveResult>;
   plans?: { id: string; title: string }[];
+  /** Absent in fixture mode: nowhere real to persist a rename to. */
+  onRename?: (title: string) => Promise<RenameResult>;
   /** Undefined in fixture mode — there is no signed-in user to show or sign out. */
   account?: { email: string };
 };
 
-export function Planner({ initialPlan, onSave, plans, account }: Props) {
+export function Planner({ initialPlan, onSave, onRename, plans, account }: Props) {
   const [places, setPlaces] = useState<Place[]>(initialPlan.places);
   const [route, setRoute] = useState<Route | null>(initialPlan.route);
+  const [title, setTitle] = useState(initialPlan.title);
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
   const [selectionSource, setSelectionSource] = useState<'map' | 'list' | null>(null);
   const [sheetExpanded, setSheetExpanded] = useState(false);
@@ -274,7 +278,9 @@ export function Planner({ initialPlan, onSave, plans, account }: Props) {
       </a>
 
       <Header
-        title={initialPlan.title}
+        title={title}
+        onRename={onRename}
+        onRenamed={setTitle}
         currentId={initialPlan.id}
         plans={plans}
         saveStatus={onSave ? save.status : undefined}
@@ -324,7 +330,8 @@ export function Planner({ initialPlan, onSave, plans, account }: Props) {
       })()}
 
       <main className={styles.body}>
-        <h1 className="sr-only">{initialPlan.title}</h1>
+        {/* The plan's <h1> now lives in Header (visible, with the rename trigger)
+            rather than duplicated here as a screen-reader-only heading. */}
         {map}
 
         {isMobile ? (

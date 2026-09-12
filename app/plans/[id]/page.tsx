@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { planFromRow } from '@/lib/plan/fromRow';
 import { Planner } from '@/components/planner/Planner';
-import { savePlan } from './actions';
+import { savePlan, renamePlan } from './actions';
 
 export default async function PlanPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -26,6 +26,7 @@ export default async function PlanPage({ params }: { params: Promise<{ id: strin
       key={id}
       initialPlan={planFromRow(row)}
       onSave={savePlan.bind(null, id)}
+      onRename={renamePlan.bind(null, id)}
       plans={(all ?? []) as { id: string; title: string }[]}
       account={userData.user?.email ? { email: userData.user.email } : undefined}
     />

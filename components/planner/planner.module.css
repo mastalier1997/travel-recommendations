@@ -30,12 +30,16 @@
 
 .header {
   flex: none;
-  height: 56px;
+  /* min-height, not a fixed height: the rename editor renders alongside the
+     h1 (never replacing it — see Header.tsx's PlanTitle), which can need more
+     room than 56px on a narrow viewport rather than clipping or overlapping. */
+  min-height: 56px;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 0 20px;
+  padding: 8px 20px;
   background: var(--surface);
   border-bottom: 1px solid var(--border-hairline);
 }
@@ -74,6 +78,83 @@
   border-radius: var(--radius);
   padding: 6px 8px;
   max-width: 220px;
+}
+
+.planIdentity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  min-width: 0;
+}
+.planTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  /* CSS truncation only — the full text node stays intact for AT, unlike a JS
+     truncation that would actually drop characters from the accessible name. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 22ch;
+}
+.renameTrigger {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  font-size: 13px;
+  color: var(--text-subtle);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.renameTrigger:hover {
+  color: var(--text);
+  background: var(--bg-sunken);
+  border-color: var(--border-control);
+}
+
+.renameForm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  position: relative;
+}
+.renameInput {
+  font: inherit;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius);
+  padding: 6px 8px;
+  min-height: 32px;
+  width: 22ch;
+  min-width: 0;
+}
+.renameInput[aria-invalid='true'] {
+  border-color: var(--danger-text);
+}
+/* Absolutely positioned so a validation message never reflows the header's own
+   height mid-edit — the header stays a fixed 56px, same as every other state. */
+.fieldError {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 5;
+  margin: 4px 0 0;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--danger-text);
+  background: var(--surface);
+  border: 1px solid var(--danger-text);
+  border-radius: var(--radius);
+  white-space: nowrap;
 }
 .ghost {
   font: inherit;
@@ -1126,6 +1207,17 @@
   .select {
     max-width: none;
     flex: 1;
+  }
+  /* Tight header already loses the wordmark text and "All plans" at this width —
+     the title shrinks further rather than competing with the switcher for space. */
+  .planTitle {
+    max-width: 9ch;
+  }
+  .renameInput {
+    width: 16ch;
+    /* >=16px or iOS auto-zooms the whole page on focus — 14px (the desktop size)
+       would trigger it here. */
+    font-size: 16px;
   }
   .attribution {
     bottom: calc(190px + 6px);
