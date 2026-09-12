@@ -26,4 +26,28 @@ test.describe('dark mode (prefers-color-scheme)', () => {
     const optimizeBtn = page.getByRole('button', { name: /optimize route|re-optimize|^route$/i }).first();
     await expect(optimizeBtn).toHaveCSS('color', 'rgb(26, 24, 21)'); // --text-on-accent dark = --bg
   });
+
+  // Non-text contrast (1.4.11) on a direct-leg row's dashed edge — axe can't check
+  // this (it's a decorative-looking border, not text), so it's an explicit
+  // computed-value assertion, same idea as the button check above. kl-bali's
+  // fixture route always carries a country-crossing direct leg.
+  test('a direct-line row edge resolves to --direct-line, not the amber "unresolved" token, in each scheme', async ({ page }) => {
+    // The theme store stamps an explicit data-theme on first load (see
+    // themeStore.ts) — once set, the prefers-color-scheme fallback no longer
+    // applies, so switching schemes mid-session needs a fresh load, same as the
+    // "switches to dark by default" case above.
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.goto('/dev/fixture/kl-bali');
+    await expect(page.locator('[data-leg-mode="direct"]').first()).toHaveCSS(
+      'border-left-color',
+      'rgb(63, 124, 140)', // --direct-line light
+    );
+
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.goto('/dev/fixture/kl-bali');
+    await expect(page.locator('[data-leg-mode="direct"]').first()).toHaveCSS(
+      'border-left-color',
+      'rgb(111, 179, 194)', // --direct-line dark
+    );
+  });
 });

@@ -127,7 +127,7 @@ export const SINGLE_AREA_ROUTE: Route = {
   orderHash: orderHash(SINGLE_AREA_PLACES, 'driving', false),
   legs: LEGS,
   totalDistanceM: LEGS.reduce((n, l) => n + l.distanceM, 0), // 23_250 → "23 km"
-  totalDurationS: LEGS.reduce((n, l) => n + l.durationS, 0), // 3_810 → "1h 3m"
+  totalDurationS: LEGS.reduce((n, l) => n + (l.durationS ?? 0), 0), // 3_810 → "1h 3m"
   geometry: { type: 'LineString', coordinates: GEOMETRY_COORDS },
   computedAt: AT,
 };

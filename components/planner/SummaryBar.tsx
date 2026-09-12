@@ -48,8 +48,14 @@ export function SummaryBar({ places, route, routeStale, onOptimize, busy }: Prop
   // A continental-scale route's geometry is simplified (lib/geo/simplify.ts, set in
   // app/api/optimize/route.ts) — that's an accuracy claim about the numbers below,
   // not just a map-drawing detail, so it's stated here rather than only as a map badge.
+  // Same reasoning for directLegCount: when >0, totalDurationS excludes those legs
+  // entirely (no real driving time to add) and totalDistanceM includes them as
+  // straight lines — the total would otherwise silently under-report time spent.
+  const directNote = route?.directLegCount
+    ? `, time total excludes ${route.directLegCount} direct-line leg${route.directLegCount === 1 ? '' : 's'} with no road route`
+    : '';
   const spoken = route
-    ? `${places.length} stops, ${formatDurationSpoken(route.totalDurationS)}, ${formatDistanceSpoken(route.totalDistanceM)}${route.generalized ? ', route simplified for this zoom' : ''}.`
+    ? `${places.length} stops, ${formatDurationSpoken(route.totalDurationS)}, ${formatDistanceSpoken(route.totalDistanceM)}${route.generalized ? ', route simplified for this zoom' : ''}${directNote}.`
     : `${places.length} stops, no route yet.`;
 
   return (
@@ -71,6 +77,12 @@ export function SummaryBar({ places, route, routeStale, onOptimize, busy }: Prop
         </p>
         {route?.generalized && (
           <p className={styles.summaryNote}>Route simplified for this zoom — zoom in on the map for turn-by-turn shape</p>
+        )}
+        {!!route?.directLegCount && (
+          <p className={styles.summaryNote}>
+            Total time excludes {route.directLegCount} direct-line leg{route.directLegCount === 1 ? '' : 's'} with no
+            road route — distance includes {route.directLegCount === 1 ? 'it' : 'them'} as straight lines
+          </p>
         )}
 
         {/* Decorative: every group's own km/time already exists as real text on its

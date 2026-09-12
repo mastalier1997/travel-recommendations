@@ -1,8 +1,16 @@
 /**
- * Diagnoses *why* a stop set is unroutable, from an unreachability mask that
- * already came back from OSRM's /table (see toTableResult in osrm.ts). No OSRM,
- * no fetch: mask + ids in, a diagnosis (or null) out — same discipline as
- * solve.ts, and directly unit-testable against hand-built masks.
+ * Diagnoses whether a stop set contains a genuinely unsnappable coordinate, from
+ * an unreachability mask that already came back from OSRM's /table (see
+ * toTableResult in osrm.ts). No OSRM, no fetch: mask + ids in, a diagnosis (or
+ * null) out — same discipline as solve.ts, and directly unit-testable against
+ * hand-built masks.
+ *
+ * A stop set that merely splits into ≥2 road-connected groups (mainland vs. an
+ * island chain, say) is NOT diagnosed here — that's normal, direct-line-routable
+ * content now (see fuseMatrix.ts), not something to flag. This only flags a stop
+ * that's cut off from EVERYTHING: singleton against a real (>=2-stop) majority.
+ * An all-singleton graph (nobody connects to anybody, including the 2-stop case)
+ * is indistinguishable from "everyone's on their own island" and is left alone.
  */
 
 import type { UnreachableDiagnosis } from '@/lib/types';
@@ -26,22 +34,15 @@ export function diagnoseUnreachable(stopIds: string[], mask: boolean[][]): Unrea
   const groups = components.map((c) => c.map((i) => stopIds[i])).sort((a, b) => b.length - a.length);
   const [largest, ...minorities] = groups;
 
-  // Every minority a lone stop, against a real (>=2-stop) majority: each of them is
-  // cut off from EVERYTHING, not just from one side of a split — confidently
-  // 'isolated', however many there are (e.g. a mainland cluster plus two
-  // independently-stranded stops). An all-singleton graph (including n===2, the
-  // Kuala Lumpur/Jakarta case) has no real majority to be isolated FROM, so that
-  // stays 'split': symmetric, nobody to blame.
-  if (largest.length >= 2 && minorities.every((g) => g.length === 1)) {
-    return { kind: 'isolated', confident: true, stopIds: minorities.flat() };
+  // A singleton minority against a real majority is cut off from EVERYTHING, not
+  // just from one side of a split — the one case worth flagging. Report the
+  // first one found; the user fixes it and re-runs to see the next, if any.
+  if (largest.length >= 2) {
+    const isolated = minorities.find((g) => g.length === 1);
+    if (isolated) return { stopId: isolated[0] };
   }
 
-  return {
-    kind: 'split',
-    confident: false,
-    stopIds: minorities.flat(),
-    groups,
-  };
+  return null;
 }
 
 function connectedComponents(n: number, connected: (i: number, j: number) => boolean): number[][] {

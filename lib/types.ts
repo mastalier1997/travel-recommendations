@@ -140,23 +140,50 @@ export type Route = {
    */
   orderHash: string;
   legs: RouteLeg[];
+  /** Sum of every leg's distanceM — road legs AND direct legs together, since users
+   * expect one trip distance. Honest because distanceM is always a real number
+   * (road distance or straight-line); see `directLegCount` for the disclosure this
+   * implies is needed ("distance includes N direct-line legs with no road route"). */
   totalDistanceM: number;
+  /** Sum of ROAD legs' durationS only — a direct leg has no real travel time to add
+   * (see RouteLeg.durationS), so this is a partial sum whenever `directLegCount > 0`.
+   * Never fabricated from a direct leg's distance. */
   totalDurationS: number;
+  /** Stitched across every leg in order — road legs' real shape, direct legs as a
+   * straight 2-point segment. Never rendered with the same solid, road-styled
+   * treatment as a real route when the trip contains a direct leg — see
+   * RouteLeg.geometry and MapView's per-leg rendering. */
   geometry: GeoJsonLineString;
   computedAt: string;
   /** True when this geometry is a zoom-simplified generalization, not turn-by-turn shape
    * (continental-scale trips) — the map/list should say so, never imply it's precise. */
   generalized?: boolean;
+  /** Count of legs with no road route (mode: 'direct') — same "don't imply a precision
+   * the data doesn't have" contract as `generalized`. When >0, `totalDurationS` is a
+   * partial sum and `totalDistanceM` mixes road and straight-line distance; the UI
+   * must disclose that (see SummaryBar). */
+  directLegCount?: number;
 };
 
 export type RouteLeg = {
   fromId: string;
   toId: string;
+  /** Always real: road distance for a normal leg, straight-line (haversine) distance
+   * for a direct leg — never a penalized/solver-internal cost (see fuseMatrix.ts). */
   distanceM: number;
-  durationS: number;
-  /** Defaults to the route's own `mode` when absent. Set per-leg for a non-driving
-   * segment (e.g. a ferry) that the road-network mode can't represent. */
-  mode?: TravelMode | 'ferry';
+  /** Undefined for a direct leg — there is no real road travel time to show, and 0
+   * would read as instant. Never a fabricated estimate: the whole point of a direct
+   * leg is that the app doesn't know how you'd actually cover it. */
+  durationS?: number;
+  /** Defaults to the route's own `mode` when absent. 'direct' means no road route was
+   * found between these two stops — could be a ferry, a flight, or nothing at all; the
+   * app deliberately doesn't guess which (see lib/routing/fuseMatrix.ts). */
+  mode?: TravelMode | 'direct';
+  /** Only present when Route.geometry is no longer a single faithful line for this leg
+   * — i.e. the route contains at least one direct leg, so every leg carries its own
+   * geometry and MapView must render per-leg instead of one polyline. Road legs get
+   * their real (simplified) shape; direct legs get a straight 2-point line. */
+  geometry?: GeoJsonLineString;
 };
 
 export type GeoJsonLineString = {
@@ -256,21 +283,19 @@ export type OptimizeResponse = {
 export type ParseFileResponse = { text: string; sourceKind: 'file'; filename: string };
 
 /**
- * Localizes an OsrmUnroutableError (lib/routing/osrm.ts) to specific stop ids —
- * see lib/routing/reachability.ts for how this is derived from a distance matrix.
+ * Localizes an OsrmUnroutableError (lib/routing/osrm.ts) to the one stop responsible
+ * — see lib/routing/reachability.ts for how this is derived from a distance matrix.
+ *
+ * A stop set that merely splits into ≥2 road-connected groups (e.g. mainland vs. an
+ * island chain, or Kuala Lumpur / Jakarta) is no longer an error at all — that's now
+ * a normal trip shape, routed with direct legs across the gaps (see fuseMatrix.ts).
+ * The one case that stays an error is a stop cut off from literally EVERYTHING
+ * (both directions, against every other stop) — usually an unsnappable coordinate
+ * (a pin in open ocean, a bad geocode), which drawing a direct line can't fix because
+ * the pin itself is the problem, not the road network.
  */
 export type UnreachableDiagnosis = {
-  /** 'isolated': one stop cut off from every other stop (both directions) — usually
-   * an unsnappable pin. 'split': the stop set breaks into ≥2 road-connected groups
-   * (e.g. mainland vs. an island chain) — no single stop is "the" problem. */
-  kind: 'isolated' | 'split';
-  /** True only for 'isolated'. A 'split' never names one side with certainty — even
-   * a 2-stop split is symmetric, so blaming one stop over the other would be a guess. */
-  confident: boolean;
-  /** Suggested-to-address ids: the isolated stop, or the union of every non-largest group. */
-  stopIds: string[];
-  /** Full partition, largest group first. Present for 'split' only. */
-  groups?: string[][];
+  stopId: string;
 };
 
 /** Every route handler returns this shape on failure. */

@@ -19,7 +19,13 @@ export type CountryGroup = {
   /** Legs strictly within this group (places.length - 1 of them, chained in order). */
   legs: RouteLeg[];
   distanceM: number;
+  /** Sum of this group's ROAD legs' durationS only — see `hasDirectLeg`. */
   durationS: number;
+  /** True when the entry leg or any leg within this group has no road route
+   * (mode: 'direct') — so `durationS` above is a partial sum, and any UI showing
+   * it must say so, same "don't imply a precision the data doesn't have" contract
+   * Route.directLegCount carries at the whole-trip level. */
+  hasDirectLeg: boolean;
 };
 
 /** Stable key for one group — shared by the sidebar (jump chips, sticky headers)
@@ -42,7 +48,10 @@ export function groupByCountry(places: Place[], route: Route | null): CountryGro
       if (leg) {
         last.legs.push(leg);
         last.distanceM += leg.distanceM;
-        last.durationS += leg.durationS;
+        // A direct leg's durationS is undefined (no real road time) — skip it
+        // rather than let it silently zero out, and flag the group as partial.
+        if (leg.durationS != null) last.durationS += leg.durationS;
+        if (leg.mode === 'direct') last.hasDirectLeg = true;
       }
       last.places.push(place);
       return;
@@ -57,6 +66,7 @@ export function groupByCountry(places: Place[], route: Route | null): CountryGro
       legs: [],
       distanceM: 0,
       durationS: 0,
+      hasDirectLeg: leg?.mode === 'direct',
     });
   });
 

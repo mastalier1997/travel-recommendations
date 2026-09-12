@@ -21,7 +21,7 @@ import {
 } from '@dnd-kit/sortable';
 import type { Place, Route } from '@/lib/types';
 import { groupByCountry, groupKey, type CountryGroup } from '@/lib/plan/groupByCountry';
-import { formatDistance, formatDurationLong, formatDurationShort } from '@/lib/format';
+import { formatDistance, formatDurationLong, formatLegDuration } from '@/lib/format';
 import { PlaceCard } from './PlaceCard';
 import styles from './planner.module.css';
 
@@ -157,7 +157,10 @@ export function PlaceList({
   const grouped = groups.length > 1;
 
   const longestLegKey = useMemo(() => {
-    const legs = route?.legs ?? [];
+    // A direct leg's straight-line distance will almost always "win" this
+    // comparison — excluded, or "Longest leg" would read as a claim about a
+    // drive that was never actually possible.
+    const legs = (route?.legs ?? []).filter((l) => l.mode !== 'direct');
     if (legs.length < 2) return null;
     const longest = legs.reduce((a, b) => (b.distanceM > a.distanceM ? b : a));
     return `${longest.fromId}>${longest.toId}`;
@@ -313,17 +316,20 @@ export function PlaceList({
               return (
                 <li key={key} id={key} className={styles.countryGroup} aria-labelledby={`${key}-h`}>
                   {g.entryLeg && (
-                    <p className={g.entryLeg.mode === 'ferry' ? styles.ferryRow : styles.borderRow}>
-                      {g.entryLeg.mode === 'ferry' ? (
+                    <p
+                      className={g.entryLeg.mode === 'direct' ? styles.directRow : styles.borderRow}
+                      data-leg-mode={g.entryLeg.mode === 'direct' ? 'direct' : undefined}
+                    >
+                      {g.entryLeg.mode === 'direct' ? (
                         <>
-                          Ferry · {nameById.get(g.entryLeg.fromId)} → {nameById.get(g.entryLeg.toId)} ·{' '}
-                          {formatDistance(g.entryLeg.distanceM)} · {formatDurationShort(g.entryLeg.durationS)} ·
-                          overnight · vehicle booking required
-                          <strong> · Not driving time</strong>
+                          Direct line · {nameById.get(g.entryLeg.fromId)} → {nameById.get(g.entryLeg.toId)} ·{' '}
+                          {formatDistance(g.entryLeg.distanceM)} straight line · no road route found · crossing into{' '}
+                          {g.countryLabel}
+                          <strong> · Not driving distance or time</strong>
                         </>
                       ) : (
                         <>
-                          {formatDistance(g.entryLeg.distanceM)} · {formatDurationShort(g.entryLeg.durationS)} ·
+                          {formatDistance(g.entryLeg.distanceM)} · {formatLegDuration(g.entryLeg.durationS)} ·
                           crossing into {g.countryLabel}
                         </>
                       )}
@@ -350,6 +356,7 @@ export function PlaceList({
                       <span aria-hidden="true">{isCollapsed ? '▸' : '▾'}</span>
                       {g.countryLabel} · {g.places.length} stop{g.places.length === 1 ? '' : 's'} ·{' '}
                       {formatDistance(g.distanceM)} · {formatDurationLong(g.durationS)}
+                      {g.hasDirectLeg ? ', excludes a direct-line leg with no road route' : ''}
                       {isCollapsed ? ', collapsed' : ''}
                     </button>
                   </h3>

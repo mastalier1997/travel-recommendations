@@ -37,8 +37,14 @@ export function estimateDetourMinutes(
     if (extraM < bestExtraM) {
       bestExtraM = extraM;
       const leg = legByFromId.get(a.id);
+      // leg.durationS is undefined for a direct leg (no road route, no real travel
+      // time) — the ASSUMED_KMH fallback below already covers "this leg has no
+      // timing of its own", so a direct leg degrades the same honest way any other
+      // untimed leg does, rather than needing its own special case.
       const metersPerSecond =
-        leg && leg.distanceM > 0 && leg.durationS > 0 ? leg.distanceM / leg.durationS : (ASSUMED_KMH * 1000) / 3600;
+        leg && leg.distanceM > 0 && leg.durationS != null && leg.durationS > 0
+          ? leg.distanceM / leg.durationS
+          : (ASSUMED_KMH * 1000) / 3600;
       best = {
         minutes: Math.max(0, Math.round(extraM / metersPerSecond / 60)),
         afterPlaceId: a.id,

@@ -39,6 +39,9 @@
   --pin-ring: #ffffff;
   --pin-unresolved-bg: #ffffff;
   --danger-text: #96331f;
+  /* Same value as MAP_COLORS.light.direct (lib/map/mapTheme.ts) — kept in sync so
+     a direct leg's dashed map line and its list row edge can't drift apart. */
+  --direct-line: #3f7c8c;
   --shadow-rgb: 40, 34, 28;
 
   --radius-sm: 4px;
@@ -82,6 +85,7 @@
   --pin-ring: var(--bg);
   --pin-unresolved-bg: #2a251c;
   --danger-text: #f0806e;
+  --direct-line: #6fb3c2; /* MAP_COLORS.dark.direct */
   --shadow-rgb: 0, 0, 0;
 }
 
@@ -115,6 +119,7 @@
     --pin-ring: var(--bg);
     --pin-unresolved-bg: #2a251c;
     --danger-text: #f0806e;
+    --direct-line: #6fb3c2;
     --shadow-rgb: 0, 0, 0;
   }
 }

@@ -3,7 +3,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Place, RouteLeg } from '@/lib/types';
-import { formatDistance, formatDurationShort } from '@/lib/format';
+import { formatDistance, formatLegDuration } from '@/lib/format';
 import { labelForOsmTag } from '@/lib/content/osm-labels';
 import { CardActions } from './CardActions';
 import styles from './planner.module.css';
@@ -80,12 +80,27 @@ export function PlaceCard({
         /*
          * The polyline's only unique information. Without it as text the map is not
          * decorative and 1.1.1 fails. Kept quiet so it does not compete with the cards.
+         * Mode-aware: a direct leg (no road route found — see RouteLeg.mode) has no
+         * real driving time and a straight-line, not road, distance. Same honesty
+         * contract as the country-crossing row in PlaceList — never let this read
+         * as a fabricated drive.
          */
-        <p className={`${styles.leg} ${stale ? styles.legStale : ''}`}>
+        <p
+          className={`${styles.leg} ${stale ? styles.legStale : ''} ${leg.leg.mode === 'direct' ? styles.legDirect : ''}`}
+          data-leg-mode={leg.leg.mode === 'direct' ? 'direct' : undefined}
+        >
           <span className={styles.legRule} aria-hidden="true" />
-          {formatDistance(leg.leg.distanceM)} · {formatDurationShort(leg.leg.durationS)} from{' '}
-          {leg.fromName}
-          {legIsLongest && ' · Longest leg'}
+          {leg.leg.mode === 'direct' ? (
+            <>
+              Direct line · {formatDistance(leg.leg.distanceM)} straight line from {leg.fromName} · no road route found
+              <strong> · Not driving distance or time</strong>
+            </>
+          ) : (
+            <>
+              {formatDistance(leg.leg.distanceM)} · {formatLegDuration(leg.leg.durationS)} from {leg.fromName}
+              {legIsLongest && ' · Longest leg'}
+            </>
+          )}
         </p>
       )}
 
@@ -130,7 +145,7 @@ export function PlaceCard({
               {unreachable && (
                 /* Never colour alone — the danger edge is backed by these words. */
                 <p id={unreachableReasonId} className={styles.unreachableReason}>
-                  No road route from this stop — may not be reachable by road
+                  Not reachable by road — its location may be off
                 </p>
               )}
               {place.description && (

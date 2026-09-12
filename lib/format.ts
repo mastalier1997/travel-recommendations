@@ -45,3 +45,10 @@ export function formatDistanceSpoken(metres: number): string {
   const v = km < 10 ? km.toFixed(1) : String(Math.round(km));
   return `${v} kilometres`;
 }
+
+/** A leg's durationS is undefined when it has no road route (RouteLeg.mode
+ * 'direct') — there's no real travel time to show. Never render that as "0 min",
+ * which formatDurationShort would happily do for a literal 0; say so instead. */
+export function formatLegDuration(seconds: number | undefined): string {
+  return seconds == null ? 'no driving time' : formatDurationShort(seconds);
+}

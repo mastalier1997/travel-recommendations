@@ -16,31 +16,20 @@ import styles from './planner.module.css';
 
 const UNDO_MS = 10_000;
 
-const UNREACHABLE_REASON = 'for example, separated by water with no ferry in our map data';
-
 function nameForId(places: Place[], id: string): string | null {
   const p = places.find((x) => x.id === id);
   return p ? (p.status === 'unresolved' ? p.raw : p.name) : null;
 }
 
-/** The server can only send ids (see OptimizeRequest — no place names cross that
- * wire). Composing the human-readable version is a client job, done live against
- * the current `places` so a since-removed id just drops out instead of going stale. */
+/** The server can only send an id (see OptimizeRequest — no place names cross
+ * that wire). Composing the human-readable version is a client job, done live
+ * against the current `places` so a since-removed id just drops out instead of
+ * going stale. Only the truly-unsnappable-coordinate case reaches this now — a
+ * road gap between two otherwise-fine stops is routed with a direct line instead
+ * of erroring (see lib/routing/reachability.ts). */
 function describeUnreachable(diagnosis: UnreachableDiagnosis, places: Place[]): string | null {
-  if (diagnosis.kind === 'isolated') {
-    const name = nameForId(places, diagnosis.stopIds[0]);
-    return name && `No road route to ${name} — it may not be reachable by road (${UNREACHABLE_REASON}).`;
-  }
-
-  // 'split': name every side of the partition, not just the flagged minority — a
-  // 2-stop split (e.g. Kuala Lumpur / Jakarta) is symmetric, and blaming only one
-  // side would be a guess dressed up as a fact.
-  const sides = (diagnosis.groups ?? [diagnosis.stopIds])
-    .map((group) => group.map((id) => nameForId(places, id)).filter((n): n is string => !!n))
-    .filter((names) => names.length > 0);
-  if (sides.length < 2) return null;
-  const label = (names: string[]) => (names.length <= 2 ? names.join(' and ') : `${names.length} stops`);
-  return `No road route between ${sides.map(label).join(' and ')} — they may be in separate, unconnected road networks (${UNREACHABLE_REASON}).`;
+  const name = nameForId(places, diagnosis.stopId);
+  return name && `${name} doesn't seem to be reachable by road — its location may be off. Try relocating or removing it.`;
 }
 
 type Props = {
@@ -146,11 +135,7 @@ export function Planner({ initialPlan, onSave, plans, account }: Props) {
 
         // Whichever path removed this place (the alert below, or the card's own
         // "Remove from plan"), a flagged id it was carrying is now stale.
-        setError((cur) => {
-          if (!cur?.unreachable?.stopIds.includes(place.id)) return cur;
-          const stopIds = cur.unreachable.stopIds.filter((id) => id !== place.id);
-          return stopIds.length ? { ...cur, unreachable: { ...cur.unreachable, stopIds } } : null;
-        });
+        setError((cur) => (cur?.unreachable?.stopId === place.id ? null : cur));
 
         const next = removeAt(cur, index);
         const focus = focusIndexAfterRemove(index, cur.length);
@@ -245,11 +230,10 @@ export function Planner({ initialPlan, onSave, plans, account }: Props) {
     />
   );
 
-  // Ids the diagnosis named that are still actually in the plan — see the error
-  // banner below for why this is filtered live rather than trusted as-is.
-  const unreachableIds = new Set(
-    (error?.unreachable?.stopIds ?? []).filter((id) => places.some((p) => p.id === id)),
-  );
+  // The flagged id, if it's still actually in the plan — see the error banner
+  // below for why this is checked live rather than trusted as-is.
+  const unreachableId = error?.unreachable?.stopId;
+  const unreachableIds = new Set(unreachableId && places.some((p) => p.id === unreachableId) ? [unreachableId] : []);
 
   const list = (
     <PlaceList
@@ -318,7 +302,7 @@ export function Planner({ initialPlan, onSave, plans, account }: Props) {
 
       {error && (() => {
         const unreachable = error.unreachable;
-        const flaggedIds = [...unreachableIds];
+        const flaggedId = [...unreachableIds][0];
         const message = (unreachable && describeUnreachable(unreachable, places)) ?? error.message;
 
         return (
@@ -328,31 +312,11 @@ export function Planner({ initialPlan, onSave, plans, account }: Props) {
           // sits outside <main> same as that one.
           <div ref={errorRef} tabIndex={-1} role="alert" className={styles.error}>
             <p>{message}</p>
-            {unreachable && flaggedIds.length > 0 && (
+            {flaggedId && (
               <div className={styles.errorActions}>
-                {unreachable.confident && flaggedIds.length === 1 ? (
-                  <button type="button" className={styles.undoBtn} onClick={() => removeUnreachableStop(flaggedIds[0])}>
-                    Remove {nameForId(places, flaggedIds[0])} from plan
-                  </button>
-                ) : flaggedIds.length <= 3 ? (
-                  flaggedIds.map((id) => (
-                    <span key={id} className={styles.errorCandidate}>
-                      <button type="button" className={styles.undoBtn} onClick={() => selectFromMap(id)}>
-                        Show {nameForId(places, id)}
-                      </button>
-                      <button type="button" className={styles.undoBtn} onClick={() => removeUnreachableStop(id)}>
-                        Remove {nameForId(places, id)}
-                      </button>
-                    </span>
-                  ))
-                ) : (
-                  // Jumps to the first of the N — worded so the label doesn't promise
-                  // reviewing all of them in one click. Each flagged card (PlaceCard)
-                  // carries its own reason text and remove action for the rest.
-                  <button type="button" className={styles.undoBtn} onClick={() => selectFromMap(flaggedIds[0])}>
-                    Show first of {flaggedIds.length} flagged stops
-                  </button>
-                )}
+                <button type="button" className={styles.undoBtn} onClick={() => removeUnreachableStop(flaggedId)}>
+                  Remove {nameForId(places, flaggedId)} from plan
+                </button>
               </div>
             )}
           </div>

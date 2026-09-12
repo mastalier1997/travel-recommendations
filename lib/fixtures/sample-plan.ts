@@ -219,7 +219,7 @@ export const SAMPLE_ROUTE: Route = {
   orderHash: orderHash(SAMPLE_PLACES, 'driving', false),
   legs: LEGS,
   totalDistanceM: LEGS.reduce((n, l) => n + l.distanceM, 0), // 186_000 → "186 km"
-  totalDurationS: LEGS.reduce((n, l) => n + l.durationS, 0), // 15_600 → "4h 20m"
+  totalDurationS: LEGS.reduce((n, l) => n + (l.durationS ?? 0), 0), // 15_600 → "4h 20m"
   geometry: { type: 'LineString', coordinates: GEOMETRY_COORDS },
   computedAt: AT,
 };

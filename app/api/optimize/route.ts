@@ -6,7 +6,7 @@ import {
   type OptimizeResponse,
 } from '@/lib/types';
 import { SAMPLE_ROUTE } from '@/lib/fixtures/sample-plan';
-import { requestTrip, requestRoute, requestSolvedRoute, OsrmUnroutableError } from '@/lib/routing/osrm';
+import { requestTrip, requestRouteWithGaps, requestSolvedRoute, OsrmUnroutableError } from '@/lib/routing/osrm';
 import { solveOrder } from '@/lib/routing/solve';
 import { haversineMatrix } from '@/lib/routing/haversine';
 import { simplifyToMaxPoints, type Point } from '@/lib/geo/simplify';
@@ -90,22 +90,27 @@ export async function POST(req: Request) {
         })
       : withinHeuristic
         ? await requestSolvedRoute(stops, { mode: mode ?? 'driving', roundTrip: roundTrip ?? false, fixFirst, fixLast })
-        : await requestRoute(stops, { mode: mode ?? 'driving', roundTrip: roundTrip ?? false });
+        : await requestRouteWithGaps(
+            stops,
+            { mode: mode ?? 'driving', roundTrip: roundTrip ?? false },
+            AbortSignal.timeout(15000),
+          );
     return Response.json({
       order,
       route: withinExact ? route : generalize(route),
     } satisfies OptimizeResponse);
   } catch (err) {
     console.error('[optimize] OSRM request failed:', err);
-    // Distinct from a service failure: OSRM answered fine and says no route exists
-    // by road between these stops at all — e.g. islands with no ferry connection in
-    // its graph (a Kuala Lumpur -> Bali "driving" trip, say). Retrying won't help;
-    // the stop list itself needs to change.
-    if (err instanceof OsrmUnroutableError) {
+    // A road gap between two otherwise-fine stops (e.g. Kuala Lumpur -> Jakarta by
+    // "driving") is no longer an error at all — it's routed with a direct
+    // (straight-line) leg instead, see lib/routing/osrm.ts. The only case that
+    // still reaches here is a stop cut off from literally everything, which
+    // usually means the coordinate itself can't attach to any road at all (an
+    // unsnappable pin — a bad geocode, or a point out in open water).
+    if (err instanceof OsrmUnroutableError && err.diagnosis) {
       return Response.json(
         {
-          error:
-            'No route found between these stops — one may not be reachable by road (for example, separated by water with no ferry in our map data). Try removing or relocating it.',
+          error: "One of these stops doesn't seem to be reachable by road — its location may be off. Try relocating or removing it.",
           unreachable: err.diagnosis,
         },
         { status: 422 },

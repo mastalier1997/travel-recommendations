@@ -404,6 +404,13 @@
 .legStale .legRule {
   background: var(--border-control);
 }
+.legDirect .legRule {
+  /* Echoes the map's dashed direct-line overlay — a solid accent-coloured rule
+     here would read as "this is a real driven leg", which it isn't. */
+  width: 0;
+  border-left: 2px dashed var(--direct-line);
+  background: none;
+}
 
 .card {
   display: flex;
@@ -793,16 +800,21 @@
 }
 
 .borderRow,
-.ferryRow {
+.directRow {
   margin: 0 0 8px;
   padding: 8px 10px;
   font-size: 11px;
   color: var(--text-subtle);
 }
-.ferryRow {
+.directRow {
+  /* Bumped from the shared 11px — this row carries the ONLY caveat that a
+     straight-line distance and missing driving time exist for this leg, so it
+     needs to be at least as readable as body text, not quiet metadata. */
+  font-size: 13px;
   color: var(--text);
   background: var(--bg-raised);
   border: 1px solid var(--border-control);
+  border-left: 3px dashed var(--direct-line);
   border-radius: var(--radius);
 }
 

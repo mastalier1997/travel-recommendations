@@ -24,7 +24,7 @@ const routeWithLegs = (legs: RouteLeg[]): Route => ({
   orderHash: 'x',
   legs,
   totalDistanceM: legs.reduce((s, l) => s + l.distanceM, 0),
-  totalDurationS: legs.reduce((s, l) => s + l.durationS, 0),
+  totalDurationS: legs.reduce((s, l) => s + (l.durationS ?? 0), 0),
   geometry: { type: 'LineString', coordinates: [] },
   computedAt: AT,
 });

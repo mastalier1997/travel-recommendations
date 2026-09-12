@@ -201,9 +201,27 @@ export function MapView({
     const colors = MAP_COLORS[mapTheme];
 
     const apply = () => {
-      const data = route
-        ? { type: 'Feature' as const, properties: {}, geometry: route.geometry }
-        : { type: 'FeatureCollection' as const, features: [] };
+      // A route with a direct leg (no road route — RouteLeg.mode 'direct') carries
+      // per-leg geometry (see lib/routing/osrm.ts's buildRoute) so the solid
+      // casing/line layers below only ever draw REAL road shape. Route.geometry
+      // alone would draw a straight, solid, road-styled line across the gap —
+      // exactly the false claim the dashed overlay exists to avoid making.
+      // Common case (no gap): no leg carries geometry, so this is the same single
+      // Feature it's always been, zero behavior change.
+      const roadLegs = (route?.legs ?? []).filter((leg) => leg.mode !== 'direct' && leg.geometry);
+      const data =
+        roadLegs.length > 0
+          ? {
+              type: 'FeatureCollection' as const,
+              features: roadLegs.map((leg) => ({
+                type: 'Feature' as const,
+                properties: {},
+                geometry: leg.geometry!,
+              })),
+            }
+          : route
+            ? { type: 'Feature' as const, properties: {}, geometry: route.geometry }
+            : { type: 'FeatureCollection' as const, features: [] };
 
       const src = map.getSource('route') as maplibregl.GeoJSONSource | undefined;
       if (src) {
@@ -234,14 +252,18 @@ export function MapView({
         map.setPaintProperty('route-line', 'line-color', routeStale ? colors.routeStale : colors.routeLine);
       }
 
-      // Ferry legs as their own dashed overlay, drawn straight between endpoints — OSRM
-      // can't route water, so there's no real road geometry to draw here in the first
-      // place. Never color-only: the list's leg row carries "Ferry · Not driving time" in text.
+      // Direct legs (no road route found — could be a ferry, a flight, or nothing
+      // at all; the app doesn't guess which) as their own dashed overlay, drawn
+      // straight between endpoints since there's no real road geometry to draw in
+      // the first place. Never colour-only: the dash pattern is one non-colour
+      // channel, the list's leg row text (which spells out "no road route found")
+      // is the one that actually carries the fact for anyone who can't see this
+      // aria-hidden canvas at all.
       const placeById = new Map(places.map((p) => [p.id, p]));
-      const ferryLegs = (route?.legs ?? []).filter((leg) => leg.mode === 'ferry');
-      const ferryData = {
+      const directLegs = (route?.legs ?? []).filter((leg) => leg.mode === 'direct');
+      const directData = {
         type: 'FeatureCollection' as const,
-        features: ferryLegs.flatMap((leg) => {
+        features: directLegs.flatMap((leg) => {
           const from = placeById.get(leg.fromId);
           const to = placeById.get(leg.toId);
           if (from?.lat == null || from?.lon == null || to?.lat == null || to?.lon == null) return [];
@@ -260,21 +282,33 @@ export function MapView({
           ];
         }),
       };
-      const ferrySrc = map.getSource('route-ferries') as maplibregl.GeoJSONSource | undefined;
-      if (ferrySrc) {
-        ferrySrc.setData(ferryData);
+      const directSrc = map.getSource('route-direct') as maplibregl.GeoJSONSource | undefined;
+      if (directSrc) {
+        directSrc.setData(directData);
       } else {
-        map.addSource('route-ferries', { type: 'geojson', data: ferryData });
+        map.addSource('route-direct', { type: 'geojson', data: directData });
+        // Same casing/line pairing as the main route, for the same reason —
+        // a bare dashed line has no legibility guarantee over an arbitrary tile.
         map.addLayer({
-          id: 'route-ferries',
+          id: 'route-direct-casing',
           type: 'line',
-          source: 'route-ferries',
+          source: 'route-direct',
           layout: { 'line-cap': 'round', 'line-join': 'round' },
-          paint: { 'line-color': colors.ferry, 'line-width': 4, 'line-dasharray': [2, 2] },
+          paint: { 'line-color': colors.routeCasing, 'line-width': 8, 'line-dasharray': [2, 2] },
+        });
+        map.addLayer({
+          id: 'route-direct',
+          type: 'line',
+          source: 'route-direct',
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: { 'line-color': colors.direct, 'line-width': 4, 'line-dasharray': [2, 2] },
         });
       }
-      if (map.getLayer('route-ferries')) {
-        map.setPaintProperty('route-ferries', 'line-color', colors.ferry);
+      if (map.getLayer('route-direct-casing')) {
+        map.setPaintProperty('route-direct-casing', 'line-color', colors.routeCasing);
+      }
+      if (map.getLayer('route-direct')) {
+        map.setPaintProperty('route-direct', 'line-color', colors.direct);
       }
     };
 
@@ -425,6 +459,7 @@ export function MapView({
   // basemapLayerIds returns [] for anything but the verified OpenFreeMap style (see
   // its module comment), and the toggle effect above is then a silent no-op.
   const showBordersBadge = grouped && basemapLayerIds(styleUrl).boundaryLayerIds.length > 0;
+  const hasDirectLeg = (route?.legs ?? []).some((leg) => leg.mode === 'direct');
 
   return (
     <div className={styles.mapWrap} data-testid="map-wrap">
@@ -437,6 +472,12 @@ export function MapView({
       {showBordersBadge && (
         <p className={styles.mapBadge} aria-hidden="true">
           Country borders on · city labels hidden below zoom {CITY_LABEL_MIN_ZOOM}
+        </p>
+      )}
+
+      {hasDirectLeg && (
+        <p className={styles.mapBadge} aria-hidden="true">
+          Dashed line · direct line, no road route
         </p>
       )}
 

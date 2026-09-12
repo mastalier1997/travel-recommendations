@@ -209,7 +209,7 @@ export const MULTI_COUNTRY_ROUTE: Route = {
   orderHash: orderHash(MULTI_COUNTRY_PLACES, 'driving', false),
   legs: LEGS,
   totalDistanceM: LEGS.reduce((n, l) => n + l.distanceM, 0), // 760_000 → "760 km"
-  totalDurationS: LEGS.reduce((n, l) => n + l.durationS, 0), // 38_100 → "10h 35m"
+  totalDurationS: LEGS.reduce((n, l) => n + (l.durationS ?? 0), 0), // 38_100 → "10h 35m"
   geometry: { type: 'LineString', coordinates: GEOMETRY_COORDS },
   computedAt: AT,
 };

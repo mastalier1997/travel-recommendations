@@ -1,4 +1,6 @@
-import type { Plan, Place } from '@/lib/types';
+import type { Plan, Place, Route, RouteLeg } from '@/lib/types';
+import { orderHash } from '@/lib/routing/order';
+import { haversineDistance } from '@/lib/routing/haversine';
 import { place } from './place';
 
 /**
@@ -6,9 +8,16 @@ import { place } from './place';
  * Yogyakarta -> Bali. Three of these (Jakarta/Yogyakarta/Bali) share one
  * countryCode ('ID') but are ~1000km apart — the case the old clusterByGroup
  * (band + flat stop-count) collapsed into one badge once zoomed out past 'close'.
- * `route: null`, same as LARGE_TRIP_PLAN — this fixture exists to exercise map
- * clustering, not routing, and an intercontinental-scale trip is exactly what
- * OSRM's public demo server can't route anyway (see lib/routing/osrm.ts's notes).
+ *
+ * `route` carries a real gap-tolerant shape (lib/routing/osrm.ts's
+ * solveAndRouteFromTable): KL -> Singapore is a real drive (causeway), Singapore
+ * -> Jakarta has no road route (a direct leg), Jakarta -> Borobudur is a real
+ * drive (both on Java), Borobudur -> Uluwatu has no road route (the Bali strait —
+ * another direct leg, and same-country this time, exercising PlaceCard's own
+ * mode-aware leg row rather than only PlaceList's country-crossing one). This is
+ * the MOCK-mode fixture, so distances/durations are illustrative, not live OSRM
+ * numbers — but the direct legs' distances are real haversine, same as
+ * production would compute them.
  */
 
 const AT = '2026-08-04T09:00:00.000Z';
@@ -56,12 +65,70 @@ export const KL_BALI_PLACES: Place[] = [
   }),
 ];
 
+const [kl, sg, jkt, yog, bali] = KL_BALI_PLACES;
+
+const directLeg = (from: Place, to: Place): RouteLeg => ({
+  fromId: from.id,
+  toId: to.id,
+  distanceM: haversineDistance(from as { lat: number; lon: number }, to as { lat: number; lon: number }),
+  mode: 'direct',
+  geometry: {
+    type: 'LineString',
+    coordinates: [
+      [from.lon as number, from.lat as number],
+      [to.lon as number, to.lat as number],
+    ],
+  },
+});
+
+const roadLeg = (from: Place, to: Place, distanceM: number, durationS: number): RouteLeg => ({
+  fromId: from.id,
+  toId: to.id,
+  distanceM,
+  durationS,
+  geometry: {
+    type: 'LineString',
+    coordinates: [
+      [from.lon as number, from.lat as number],
+      [to.lon as number, to.lat as number],
+    ],
+  },
+});
+
+const KL_BALI_LEGS: RouteLeg[] = [
+  roadLeg(kl, sg, 350_000, 16_200), // KL -> Singapore: real drive via the causeway
+  directLeg(sg, jkt), // Singapore -> Jakarta: no road route
+  roadLeg(jkt, yog, 450_000, 25_200), // Jakarta -> Borobudur: real drive, both on Java
+  directLeg(yog, bali), // Borobudur -> Uluwatu: no road route (the Bali strait)
+];
+
+export const KL_BALI_ROUTE: Route = {
+  version: 1,
+  provider: 'osrm',
+  mode: 'driving',
+  roundTrip: false,
+  optimized: true,
+  optimizationMethod: 'heuristic',
+  orderHash: orderHash(KL_BALI_PLACES, 'driving', false),
+  legs: KL_BALI_LEGS,
+  totalDistanceM: KL_BALI_LEGS.reduce((n, l) => n + l.distanceM, 0),
+  // Road legs only (16_200 + 25_200 = 41_400 → "11h 30m") — the two direct legs
+  // have no real driving time to add, see RouteLeg.durationS.
+  totalDurationS: KL_BALI_LEGS.reduce((n, l) => n + (l.durationS ?? 0), 0),
+  geometry: {
+    type: 'LineString',
+    coordinates: KL_BALI_LEGS.flatMap((l) => l.geometry!.coordinates),
+  },
+  computedAt: AT,
+  directLegCount: KL_BALI_LEGS.filter((l) => l.mode === 'direct').length,
+};
+
 export const KL_BALI_PLAN: Plan = {
   id: 'plan_kl_bali_2026',
   user_id: 'user_fixture',
   title: 'Kuala Lumpur to Bali',
   places: KL_BALI_PLACES,
-  route: null,
+  route: KL_BALI_ROUTE,
   schema_version: 1,
   version: 1,
   updated_at: AT,

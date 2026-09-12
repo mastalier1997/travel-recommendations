@@ -5,6 +5,7 @@ import {
   formatDurationShort,
   formatDurationSpoken,
   formatDistanceSpoken,
+  formatLegDuration,
 } from './format';
 import { SAMPLE_ROUTE } from '@/lib/fixtures/sample-plan';
 
@@ -45,6 +46,16 @@ describe('spoken forms', () => {
     expect(formatDurationSpoken(0)).toBe('0 minutes');
     expect(formatDistanceSpoken(186_000)).toBe('186 kilometres');
     expect(formatDistanceSpoken(5_400)).toBe('5.4 kilometres');
+  });
+});
+
+describe('formatLegDuration', () => {
+  it('says "no driving time" for a direct leg, never "0 min" — 0 is a real, different value', () => {
+    expect(formatLegDuration(undefined)).toBe('no driving time');
+    expect(formatDurationSpoken(0)).toBe('0 minutes'); // the value formatLegDuration must never produce for "no data"
+  });
+  it('otherwise delegates to the normal short formatter', () => {
+    expect(formatLegDuration(960)).toBe('16 min');
   });
 });
 

@@ -8,19 +8,19 @@ export type MapTheme = 'light' | 'dark';
  */
 export const MAP_COLORS: Record<
   MapTheme,
-  { routeCasing: string; routeLine: string; routeStale: string; ferry: string }
+  { routeCasing: string; routeLine: string; routeStale: string; direct: string }
 > = {
   light: {
     routeCasing: '#ffffff', // --surface
     routeLine: '#c2643f', // --accent
     routeStale: '#9a9288', // --border-control
-    ferry: '#3f7c8c', // distinct teal so a non-driving leg never reads as a driving one
+    direct: '#3f7c8c', // distinct teal so a no-road-route leg never reads as a driving one — matches --direct-line in planner.module.css
   },
   dark: {
     routeCasing: '#17150f', // --bg, near-black casing per the design's dark-mode polarity flip
     routeLine: '#f08a52', // --accent
     routeStale: '#787268', // --border-control
-    ferry: '#6fb3c2',
+    direct: '#6fb3c2',
   },
 };
 
