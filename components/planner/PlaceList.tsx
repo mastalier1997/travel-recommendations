@@ -39,6 +39,9 @@ type Props = {
   /** Set by the parent to pull focus onto a card after a remove. */
   focusIndex: number | null;
   onFocusHandled: () => void;
+  /** Stop ids the last optimize failure flagged as likely unreachable — see
+   * Planner's error banner, the other consumer of this same diagnosis. */
+  unreachableIds: Set<string>;
 };
 
 const instructions: ScreenReaderInstructions = {
@@ -58,6 +61,7 @@ export function PlaceList({
   onDragStateChange,
   focusIndex,
   onFocusHandled,
+  unreachableIds,
 }: Props) {
   const refs = useRef(new Map<string, HTMLButtonElement>());
   const headingRefs = useRef(new Map<string, HTMLHeadingElement>());
@@ -172,6 +176,7 @@ export function PlaceList({
         legIsLongest={leg ? `${leg.fromId}>${leg.toId}` === longestLegKey : false}
         selected={p.id === selectedStopId}
         stale={routeStale}
+        unreachable={unreachableIds.has(p.id)}
         onSelect={onSelect}
         onMove={(i, delta) => onReorder(i, i + delta)}
         onMoveTo={(i, to) => onReorder(i, to)}

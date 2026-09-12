@@ -19,6 +19,10 @@ type Props = {
   legIsLongest?: boolean;
   selected: boolean;
   stale: boolean;
+  /** Flagged by the last failed optimize as likely unreachable by road — never
+   * true alongside `unresolved` (an unresolved place has no coords, so it's never
+   * sent to /api/optimize in the first place). */
+  unreachable: boolean;
   onSelect: (id: string) => void;
   onMove: (index: number, delta: number) => void;
   onMoveTo: (index: number, to: number) => void;
@@ -47,6 +51,7 @@ export function PlaceCard({
   legIsLongest,
   selected,
   stale,
+  unreachable,
   onSelect,
   onMove,
   onMoveTo,
@@ -62,6 +67,7 @@ export function PlaceCard({
   const unresolved = place.status === 'unresolved';
   const meta = [regionLabel(place), categoryLabel(place)].filter(Boolean).join(' · ');
   const displayName = unresolved ? place.raw : place.name;
+  const unreachableReasonId = unreachable ? `unreachable-${place.id}` : undefined;
 
   return (
     <li
@@ -83,7 +89,7 @@ export function PlaceCard({
         </p>
       )}
 
-      <div className={styles.card} data-selected={selected} data-unresolved={unresolved}>
+      <div className={styles.card} data-selected={selected} data-unresolved={unresolved} data-unreachable={unreachable}>
         {/*
          * A real button, not a div with tabIndex — that makes most of dnd-kit's
          * injected role/tabindex attributes redundant, which is the point.
@@ -108,6 +114,7 @@ export function PlaceCard({
             ref={cardRef}
             className={styles.cardName}
             aria-pressed={selected}
+            aria-describedby={unreachableReasonId}
             onClick={() => onSelect(place.id)}
           >
             {/* Order is in the accessible name, not only in the badge. */}
@@ -120,6 +127,12 @@ export function PlaceCard({
             <p className={styles.needsReview}>Needs review — pick a match</p>
           ) : (
             <>
+              {unreachable && (
+                /* Never colour alone — the danger edge is backed by these words. */
+                <p id={unreachableReasonId} className={styles.unreachableReason}>
+                  No road route from this stop — may not be reachable by road
+                </p>
+              )}
               {place.description && (
                 <p className={styles.cardDesc} lang={place.description.lang ?? undefined}>
                   {place.description.text}

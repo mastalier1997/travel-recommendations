@@ -106,6 +106,7 @@ export async function POST(req: Request) {
         {
           error:
             'No route found between these stops — one may not be reachable by road (for example, separated by water with no ferry in our map data). Try removing or relocating it.',
+          unreachable: err.diagnosis,
         },
         { status: 422 },
       );

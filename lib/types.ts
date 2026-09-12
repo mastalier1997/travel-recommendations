@@ -255,5 +255,23 @@ export type OptimizeResponse = {
 
 export type ParseFileResponse = { text: string; sourceKind: 'file'; filename: string };
 
+/**
+ * Localizes an OsrmUnroutableError (lib/routing/osrm.ts) to specific stop ids —
+ * see lib/routing/reachability.ts for how this is derived from a distance matrix.
+ */
+export type UnreachableDiagnosis = {
+  /** 'isolated': one stop cut off from every other stop (both directions) — usually
+   * an unsnappable pin. 'split': the stop set breaks into ≥2 road-connected groups
+   * (e.g. mainland vs. an island chain) — no single stop is "the" problem. */
+  kind: 'isolated' | 'split';
+  /** True only for 'isolated'. A 'split' never names one side with certainty — even
+   * a 2-stop split is symmetric, so blaming one stop over the other would be a guess. */
+  confident: boolean;
+  /** Suggested-to-address ids: the isolated stop, or the union of every non-largest group. */
+  stopIds: string[];
+  /** Full partition, largest group first. Present for 'split' only. */
+  groups?: string[][];
+};
+
 /** Every route handler returns this shape on failure. */
-export type ApiError = { error: string; retryAfterMs?: number };
+export type ApiError = { error: string; retryAfterMs?: number; unreachable?: UnreachableDiagnosis };

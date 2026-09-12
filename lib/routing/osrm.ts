@@ -1,5 +1,6 @@
-import type { Route, RouteLeg, TravelMode } from '@/lib/types';
+import type { Route, RouteLeg, TravelMode, UnreachableDiagnosis } from '@/lib/types';
 import { solveOrder } from './solve';
+import { diagnoseUnreachable } from './reachability';
 
 const OSRM_URL = process.env.OSRM_URL ?? 'https://router.project-osrm.org';
 
@@ -7,8 +8,15 @@ const OSRM_URL = process.env.OSRM_URL ?? 'https://router.project-osrm.org';
  * the given stops — a fact about the road network (e.g. two islands with no ferry
  * connection in OSRM's graph, like Kuala Lumpur to Bali by "driving"), not a service
  * failure. Callers can catch this to give a specific, actionable message instead of
- * the generic "couldn't reach the routing service". */
-export class OsrmUnroutableError extends Error {}
+ * the generic "couldn't reach the routing service". `diagnosis`, when present, names
+ * which stop(s) — see lib/routing/reachability.ts. */
+export class OsrmUnroutableError extends Error {
+  diagnosis?: UnreachableDiagnosis;
+  constructor(message: string, diagnosis?: UnreachableDiagnosis) {
+    super(message);
+    this.diagnosis = diagnosis;
+  }
+}
 
 /** "No route/trip possible" codes across /trip, /route, and /table. Only 'NoTrips' is
  * confirmed live against the public demo server (as a non-2xx HTTP status, not a 200
@@ -90,11 +98,36 @@ export async function requestTrip(
   if (fixFirst) url.searchParams.set('source', 'first');
   if (opts.fixLast) url.searchParams.set('destination', 'last');
 
-  const res = await fetch(url);
-  await throwOnError(res, 'trip');
-  const data = (await res.json()) as OsrmTripResponse;
+  try {
+    const res = await fetch(url);
+    await throwOnError(res, 'trip');
+    const data = (await res.json()) as OsrmTripResponse;
+    return toTripResult(stops, data, opts);
+  } catch (err) {
+    // /trip never fetches a distance matrix (unlike requestSolvedRoute below), so
+    // OSRM's failure code alone can't say WHICH stop is unroutable. Worth one extra,
+    // bounded /table call here — and only here — to localize it for the 422 message.
+    if (err instanceof OsrmUnroutableError && !err.diagnosis) {
+      err.diagnosis = await diagnoseViaTable(stops, opts.mode);
+    }
+    throw err;
+  }
+}
 
-  return toTripResult(stops, data, opts);
+/** Best-effort localization for the exact tier, which has no matrix of its own.
+ * Must never turn a clean 422 into something worse: any failure here (timeout,
+ * TooBig, another OsrmUnroutableError) is swallowed — the caller falls back to
+ * today's un-diagnosed message. Purely cosmetic, never load-bearing. */
+async function diagnoseViaTable(
+  stops: { id: string; lat: number; lon: number }[],
+  mode: TravelMode,
+): Promise<UnreachableDiagnosis | undefined> {
+  try {
+    const table = await requestTable(stops, { mode }, AbortSignal.timeout(5000));
+    return diagnoseUnreachable(stops.map((s) => s.id), table.unreachable) ?? undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 export function toTripResult(
@@ -216,7 +249,15 @@ type OsrmTableResponse = {
   distances?: (number | null)[][];
 };
 
-export type OsrmTableResult = { durations: number[][]; distances: number[][] };
+export type OsrmTableResult = {
+  durations: number[][];
+  distances: number[][];
+  /** `[i][j] === true` where OSRM returned null for that pair — kept alongside the
+   * MAX_SAFE_INTEGER-substituted durations/distances (below) instead of being
+   * discarded, so requestSolvedRoute can diagnose a genuine disconnection instead
+   * of just failing on the /route call it would otherwise waste. */
+  unreachable: boolean[][];
+};
 
 export async function requestTable(
   stops: { id: string; lat: number; lon: number }[],
@@ -244,6 +285,7 @@ export function toTableResult(data: OsrmTableResponse): OsrmTableResult {
   return {
     durations: data.durations.map(clean),
     distances: data.distances.map(clean),
+    unreachable: data.durations.map((row) => row.map((v) => v == null)),
   };
 }
 
@@ -262,6 +304,14 @@ export async function requestSolvedRoute(
   // 502 instead of the platform's own timeout with no error body.
   const signal = AbortSignal.timeout(8000);
   const table = await requestTable(stops, { mode: opts.mode }, signal);
+
+  // The matrix already proves a genuine disconnection here — no need to spend the
+  // /route call finding that out the slow way. (Fail-fast only: /table's null cells
+  // are exactly what /route would fail on too, so this can't reject a trip /route
+  // would otherwise have solved.)
+  const diagnosis = diagnoseUnreachable(stops.map((s) => s.id), table.unreachable);
+  if (diagnosis) throw new OsrmUnroutableError('Unreachable stop(s) found via /table', diagnosis);
+
   const order = solveOrder(table.durations, {
     roundTrip: opts.roundTrip,
     fixFirst: opts.fixFirst,

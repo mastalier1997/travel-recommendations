@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { OptimizeResponse, Plan, Place, Route } from '@/lib/types';
+import type { OptimizeResponse, Plan, Place, Route, UnreachableDiagnosis } from '@/lib/types';
 import { isRouteStale, orderHash } from '@/lib/routing/order';
 import { focusIndexAfterRemove, insertAt, moveTo, removeAt } from '@/lib/plan/reorder';
 import { useIsMobile, usePrefersReducedMotion } from '@/lib/hooks/useMediaQuery';
@@ -15,6 +15,33 @@ import { AddStopSearch } from './AddStopSearch';
 import styles from './planner.module.css';
 
 const UNDO_MS = 10_000;
+
+const UNREACHABLE_REASON = 'for example, separated by water with no ferry in our map data';
+
+function nameForId(places: Place[], id: string): string | null {
+  const p = places.find((x) => x.id === id);
+  return p ? (p.status === 'unresolved' ? p.raw : p.name) : null;
+}
+
+/** The server can only send ids (see OptimizeRequest — no place names cross that
+ * wire). Composing the human-readable version is a client job, done live against
+ * the current `places` so a since-removed id just drops out instead of going stale. */
+function describeUnreachable(diagnosis: UnreachableDiagnosis, places: Place[]): string | null {
+  if (diagnosis.kind === 'isolated') {
+    const name = nameForId(places, diagnosis.stopIds[0]);
+    return name && `No road route to ${name} — it may not be reachable by road (${UNREACHABLE_REASON}).`;
+  }
+
+  // 'split': name every side of the partition, not just the flagged minority — a
+  // 2-stop split (e.g. Kuala Lumpur / Jakarta) is symmetric, and blaming only one
+  // side would be a guess dressed up as a fact.
+  const sides = (diagnosis.groups ?? [diagnosis.stopIds])
+    .map((group) => group.map((id) => nameForId(places, id)).filter((n): n is string => !!n))
+    .filter((names) => names.length > 0);
+  if (sides.length < 2) return null;
+  const label = (names: string[]) => (names.length <= 2 ? names.join(' and ') : `${names.length} stops`);
+  return `No road route between ${sides.map(label).join(' and ')} — they may be in separate, unconnected road networks (${UNREACHABLE_REASON}).`;
+}
 
 type Props = {
   initialPlan: Plan;
@@ -37,11 +64,13 @@ export function Planner({ initialPlan, onSave, plans, account }: Props) {
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ message: string; unreachable?: UnreachableDiagnosis } | null>(null);
+  const [errorToken, setErrorToken] = useState(0);
   const [focusIndex, setFocusIndex] = useState<number | null>(null);
   const [removed, setRemoved] = useState<{ place: Place; index: number } | null>(null);
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const conflictAlertRef = useRef<HTMLParagraphElement>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
 
   const isMobile = useIsMobile();
   const reducedMotion = usePrefersReducedMotion();
@@ -70,6 +99,14 @@ export function Planner({ initialPlan, onSave, plans, account }: Props) {
       requestAnimationFrame(() => conflictAlertRef.current?.focus());
     }
   }, [save.status]);
+
+  // Same reasoning, for a failed optimize: role="alert" never moves focus on its
+  // own. Keyed on a token (bumped only from the optimize() failure path below, not
+  // from removeUnreachableStop's follow-up updates) so acting on the alert doesn't
+  // yank focus back into it.
+  useEffect(() => {
+    if (errorToken > 0) requestAnimationFrame(() => errorRef.current?.focus());
+  }, [errorToken]);
 
   const selectFromMap = useCallback((id: string) => {
     setSelectedStopId(id);
@@ -107,6 +144,14 @@ export function Planner({ initialPlan, onSave, plans, account }: Props) {
         setRemoved({ place, index });
         undoTimer.current = setTimeout(() => setRemoved(null), UNDO_MS);
 
+        // Whichever path removed this place (the alert below, or the card's own
+        // "Remove from plan"), a flagged id it was carrying is now stale.
+        setError((cur) => {
+          if (!cur?.unreachable?.stopIds.includes(place.id)) return cur;
+          const stopIds = cur.unreachable.stopIds.filter((id) => id !== place.id);
+          return stopIds.length ? { ...cur, unreachable: { ...cur.unreachable, stopIds } } : null;
+        });
+
         const next = removeAt(cur, index);
         const focus = focusIndexAfterRemove(index, cur.length);
         setFocusIndex(focus >= 0 ? focus : null);
@@ -115,6 +160,21 @@ export function Planner({ initialPlan, onSave, plans, account }: Props) {
       });
     },
     [],
+  );
+
+  // One action per flagged stop (see the optimize() error banner) — reuses `remove`
+  // and `selectFromMap` as-is rather than a second removal/selection path.
+  const removeUnreachableStop = useCallback(
+    (id: string) => {
+      const index = places.findIndex((p) => p.id === id);
+      if (index === -1) return;
+      // The button lives in the top banner, outside the mobile sheet — without this,
+      // remove()'s own focus-the-neighbor step would land on a card inside an inert,
+      // collapsed sheet. Same reasoning as selectFromMap.
+      setSheetExpanded(true);
+      remove(index);
+    },
+    [places, remove],
   );
 
   const undoRemove = useCallback(() => {
@@ -141,7 +201,8 @@ export function Planner({ initialPlan, onSave, plans, account }: Props) {
       });
       const body = await res.json();
       if (!res.ok) {
-        setError(body.error ?? 'Could not optimize this route.');
+        setError({ message: body.error ?? 'Could not optimize this route.', unreachable: body.unreachable });
+        setErrorToken((t) => t + 1);
         return;
       }
 
@@ -155,7 +216,8 @@ export function Planner({ initialPlan, onSave, plans, account }: Props) {
       setPlaces(next);
       setRoute({ ...solved, orderHash: orderHash(next, solved.mode, solved.roundTrip) });
     } catch {
-      setError('Could not reach the routing service.');
+      setError({ message: 'Could not reach the routing service.' });
+      setErrorToken((t) => t + 1);
     } finally {
       setBusy(false);
     }
@@ -183,6 +245,12 @@ export function Planner({ initialPlan, onSave, plans, account }: Props) {
     />
   );
 
+  // Ids the diagnosis named that are still actually in the plan — see the error
+  // banner below for why this is filtered live rather than trusted as-is.
+  const unreachableIds = new Set(
+    (error?.unreachable?.stopIds ?? []).filter((id) => places.some((p) => p.id === id)),
+  );
+
   const list = (
     <PlaceList
       places={places}
@@ -196,6 +264,7 @@ export function Planner({ initialPlan, onSave, plans, account }: Props) {
       onDragStateChange={setDragging}
       focusIndex={focusIndex}
       onFocusHandled={() => setFocusIndex(null)}
+      unreachableIds={unreachableIds}
     />
   );
 
@@ -247,11 +316,48 @@ export function Planner({ initialPlan, onSave, plans, account }: Props) {
         </p>
       )}
 
-      {error && (
-        <p className={styles.error} role="alert">
-          {error}
-        </p>
-      )}
+      {error && (() => {
+        const unreachable = error.unreachable;
+        const flaggedIds = [...unreachableIds];
+        const message = (unreachable && describeUnreachable(unreachable, places)) ?? error.message;
+
+        return (
+          // A single role="alert" (not a role="group" wrapper around it) — same
+          // element the conflict alert above already uses. axe's landmark-region
+          // check exempts live-region roles like alert but not "group", and this
+          // sits outside <main> same as that one.
+          <div ref={errorRef} tabIndex={-1} role="alert" className={styles.error}>
+            <p>{message}</p>
+            {unreachable && flaggedIds.length > 0 && (
+              <div className={styles.errorActions}>
+                {unreachable.confident && flaggedIds.length === 1 ? (
+                  <button type="button" className={styles.undoBtn} onClick={() => removeUnreachableStop(flaggedIds[0])}>
+                    Remove {nameForId(places, flaggedIds[0])} from plan
+                  </button>
+                ) : flaggedIds.length <= 3 ? (
+                  flaggedIds.map((id) => (
+                    <span key={id} className={styles.errorCandidate}>
+                      <button type="button" className={styles.undoBtn} onClick={() => selectFromMap(id)}>
+                        Show {nameForId(places, id)}
+                      </button>
+                      <button type="button" className={styles.undoBtn} onClick={() => removeUnreachableStop(id)}>
+                        Remove {nameForId(places, id)}
+                      </button>
+                    </span>
+                  ))
+                ) : (
+                  // Jumps to the first of the N — worded so the label doesn't promise
+                  // reviewing all of them in one click. Each flagged card (PlaceCard)
+                  // carries its own reason text and remove action for the rest.
+                  <button type="button" className={styles.undoBtn} onClick={() => selectFromMap(flaggedIds[0])}>
+                    Show first of {flaggedIds.length} flagged stops
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       <main className={styles.body}>
         <h1 className="sr-only">{initialPlan.title}</h1>

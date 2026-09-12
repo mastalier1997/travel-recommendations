@@ -210,6 +210,14 @@ describe('toTableResult', () => {
     expect(result.durations[0][2]).toBe(Number.MAX_SAFE_INTEGER);
   });
 
+  it('exposes which pairs were null instead of only discarding them', () => {
+    const data = okTableResponse();
+    data.durations[0][2] = null as unknown as number;
+    const result = toTableResult(data);
+    expect(result.unreachable[0][2]).toBe(true);
+    expect(result.unreachable[0][1]).toBe(false);
+  });
+
   it('throws when OSRM returns a non-Ok code', () => {
     expect(() => toTableResult({ code: 'NoTable' })).toThrow(/NoTable/);
   });

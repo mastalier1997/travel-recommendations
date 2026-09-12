@@ -122,6 +122,24 @@
   color: var(--amber-chip-text);
   border-bottom: 1px solid var(--amber-edge);
 }
+.error p {
+  margin: 0;
+}
+/* Row of per-stop actions under an optimize failure — same flex-row-of-button
+   shape as .undo, so buttons keep the 24px target size 2.5.8 wants even when the
+   message above them wraps. */
+.errorActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+.errorCandidate {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
 
 /* --- body / two panes --------------------------------------------------- */
 
@@ -406,6 +424,9 @@
 .card[data-unresolved='true'] {
   border-left-color: var(--amber-edge);
 }
+.card[data-unreachable='true'] {
+  border-left-color: var(--danger-text);
+}
 
 .badge {
   flex: none;
@@ -425,6 +446,11 @@
   background: var(--surface);
   color: var(--amber-chip-text);
   border: 2px solid var(--amber-edge);
+}
+.card[data-unreachable='true'] .badge {
+  background: var(--surface);
+  color: var(--danger-text);
+  border: 2px solid var(--danger-text);
 }
 
 .cardBody {
@@ -679,6 +705,11 @@
   margin: 4px 0 0;
   font-size: 13px;
   color: var(--amber-chip-text);
+}
+.unreachableReason {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--danger-text);
 }
 
 /* --- country grouping (continental scale) -------------------------------- */
