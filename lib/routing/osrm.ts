@@ -3,6 +3,16 @@ import { solveOrder } from './solve';
 
 const OSRM_URL = process.env.OSRM_URL ?? 'https://router.project-osrm.org';
 
+/** OSRM's error responses are small JSON bodies ({"code":...,"message":...}) that
+ * name the actual problem (e.g. "TooBig", "NotImplemented") — worth surfacing in
+ * the thrown error instead of just the bare HTTP status, so a production failure
+ * says what actually went wrong instead of just that something did. */
+export async function throwOnError(res: Response, endpoint: string): Promise<void> {
+  if (res.ok) return;
+  const body = await res.text().catch(() => '');
+  throw new Error(`OSRM /${endpoint} responded ${res.status}: ${body.slice(0, 300)}`);
+}
+
 /**
  * Shape of OSRM's /trip response. Verified live against the public demo server —
  * `waypoints[]` is in INPUT order, not solved order; `waypoints[i].waypoint_index`
@@ -54,7 +64,7 @@ export async function requestTrip(
   if (opts.fixLast) url.searchParams.set('destination', 'last');
 
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`OSRM responded ${res.status}`);
+  await throwOnError(res, 'trip');
   const data = (await res.json()) as OsrmTripResponse;
 
   return toTripResult(stops, data, opts);
@@ -123,7 +133,7 @@ export async function requestRoute(
   url.searchParams.set('overview', 'full');
 
   const res = await fetch(url, { signal });
-  if (!res.ok) throw new Error(`OSRM responded ${res.status}`);
+  await throwOnError(res, 'route');
   const data = (await res.json()) as OsrmRouteResponse;
   return toRouteResult(stops, data, opts);
 }
@@ -188,7 +198,7 @@ export async function requestTable(
   url.searchParams.set('annotations', 'duration,distance');
 
   const res = await fetch(url, { signal });
-  if (!res.ok) throw new Error(`OSRM responded ${res.status}`);
+  await throwOnError(res, 'table');
   const data = (await res.json()) as OsrmTableResponse;
   return toTableResult(data);
 }

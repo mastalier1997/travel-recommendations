@@ -1,5 +1,18 @@
 import { describe, it, expect } from 'vitest';
-import { toTripResult, toRouteResult, toTableResult } from './osrm';
+import { toTripResult, toRouteResult, toTableResult, throwOnError } from './osrm';
+
+describe('throwOnError', () => {
+  it('does nothing on a successful response', async () => {
+    await expect(throwOnError(new Response('{}', { status: 200 }), 'trip')).resolves.toBeUndefined();
+  });
+
+  it("surfaces OSRM's own error code and status, not just the bare status", async () => {
+    const body = JSON.stringify({ code: 'NotImplemented', message: 'This request is not supported' });
+    await expect(throwOnError(new Response(body, { status: 400 }), 'trip')).rejects.toThrow(
+      /OSRM \/trip responded 400.*NotImplemented/s,
+    );
+  });
+});
 
 const stop = (id: string, lat: number, lon: number) => ({ id, lat, lon });
 
