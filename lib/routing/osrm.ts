@@ -3,13 +3,40 @@ import { solveOrder } from './solve';
 
 const OSRM_URL = process.env.OSRM_URL ?? 'https://router.project-osrm.org';
 
+/** Thrown when OSRM successfully answered but says no trip/route is possible between
+ * the given stops — a fact about the road network (e.g. two islands with no ferry
+ * connection in OSRM's graph, like Kuala Lumpur to Bali by "driving"), not a service
+ * failure. Callers can catch this to give a specific, actionable message instead of
+ * the generic "couldn't reach the routing service". */
+export class OsrmUnroutableError extends Error {}
+
+/** "No route/trip possible" codes across /trip, /route, and /table. Only 'NoTrips' is
+ * confirmed live against the public demo server (as a non-2xx HTTP status, not a 200
+ * with a logical failure code) — for a Kuala Lumpur -> Bali "driving" request, no
+ * road/ferry connection exists in OSRM's graph. 'NoTrip', 'NoRoute', and 'NoSegment'
+ * (an unsnappable coordinate — the same underlying failure regardless of endpoint)
+ * are OSRM's documented equivalents for the other endpoints, not independently
+ * verified here; if OSRM's real behavior for those ever differs, this is the set to
+ * revisit. */
+const UNROUTABLE_CODES = new Set(['NoTrips', 'NoTrip', 'NoRoute', 'NoSegment']);
+
+function osrmCode(body: string): string | null {
+  try {
+    return (JSON.parse(body) as { code?: string }).code ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** OSRM's error responses are small JSON bodies ({"code":...,"message":...}) that
- * name the actual problem (e.g. "TooBig", "NotImplemented") — worth surfacing in
- * the thrown error instead of just the bare HTTP status, so a production failure
- * says what actually went wrong instead of just that something did. */
+ * name the actual problem (e.g. "TooBig", "NotImplemented", "NoTrips") — worth
+ * surfacing in the thrown error instead of just the bare HTTP status, so a
+ * production failure says what actually went wrong instead of just that something did. */
 export async function throwOnError(res: Response, endpoint: string): Promise<void> {
   if (res.ok) return;
   const body = await res.text().catch(() => '');
+  const code = osrmCode(body);
+  if (code && UNROUTABLE_CODES.has(code)) throw new OsrmUnroutableError(`OSRM /${endpoint}: ${code}`);
   throw new Error(`OSRM /${endpoint} responded ${res.status}: ${body.slice(0, 300)}`);
 }
 
@@ -75,9 +102,11 @@ export function toTripResult(
   data: OsrmTripResponse,
   opts: { mode: TravelMode; roundTrip: boolean },
 ): OsrmTripResult {
-  // OSRM returns "NoTrip" (no route exists at all, e.g. an unreachable island stop) or
-  // other non-"Ok" codes on failure — surface that instead of indexing into undefined.
+  // Empirically this demo server delivers "no trip possible" as a non-2xx status
+  // (see throwOnError), but a 200 with a failure code is still handled defensively —
+  // surface that instead of indexing into undefined either way.
   if (data.code !== 'Ok' || !data.trips?.[0] || !data.waypoints) {
+    if (UNROUTABLE_CODES.has(data.code)) throw new OsrmUnroutableError(`OSRM /trip: ${data.code}`);
     throw new Error(`OSRM trip failed: ${data.code}`);
   }
 
@@ -144,6 +173,7 @@ export function toRouteResult(
   opts: { mode: TravelMode; roundTrip: boolean },
 ): OsrmTripResult {
   if (data.code !== 'Ok' || !data.routes?.[0]) {
+    if (UNROUTABLE_CODES.has(data.code)) throw new OsrmUnroutableError(`OSRM /route: ${data.code}`);
     throw new Error(`OSRM route failed: ${data.code}`);
   }
 
@@ -205,6 +235,7 @@ export async function requestTable(
 
 export function toTableResult(data: OsrmTableResponse): OsrmTableResult {
   if (data.code !== 'Ok' || !data.durations || !data.distances) {
+    if (UNROUTABLE_CODES.has(data.code)) throw new OsrmUnroutableError(`OSRM /table: ${data.code}`);
     throw new Error(`OSRM table failed: ${data.code}`);
   }
   // A pair OSRM can't route between at all comes back null — treat it as "very

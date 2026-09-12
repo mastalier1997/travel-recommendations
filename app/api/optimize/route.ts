@@ -6,7 +6,7 @@ import {
   type OptimizeResponse,
 } from '@/lib/types';
 import { SAMPLE_ROUTE } from '@/lib/fixtures/sample-plan';
-import { requestTrip, requestRoute, requestSolvedRoute } from '@/lib/routing/osrm';
+import { requestTrip, requestRoute, requestSolvedRoute, OsrmUnroutableError } from '@/lib/routing/osrm';
 import { solveOrder } from '@/lib/routing/solve';
 import { haversineMatrix } from '@/lib/routing/haversine';
 import { simplifyToMaxPoints, type Point } from '@/lib/geo/simplify';
@@ -97,6 +97,19 @@ export async function POST(req: Request) {
     } satisfies OptimizeResponse);
   } catch (err) {
     console.error('[optimize] OSRM request failed:', err);
+    // Distinct from a service failure: OSRM answered fine and says no route exists
+    // by road between these stops at all — e.g. islands with no ferry connection in
+    // its graph (a Kuala Lumpur -> Bali "driving" trip, say). Retrying won't help;
+    // the stop list itself needs to change.
+    if (err instanceof OsrmUnroutableError) {
+      return Response.json(
+        {
+          error:
+            'No route found between these stops — one may not be reachable by road (for example, separated by water with no ferry in our map data). Try removing or relocating it.',
+        },
+        { status: 422 },
+      );
+    }
     return Response.json({ error: 'Could not reach the routing service.' }, { status: 502 });
   }
 }

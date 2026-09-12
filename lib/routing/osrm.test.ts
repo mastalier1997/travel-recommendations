@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toTripResult, toRouteResult, toTableResult, throwOnError } from './osrm';
+import { toTripResult, toRouteResult, toTableResult, throwOnError, OsrmUnroutableError } from './osrm';
 
 describe('throwOnError', () => {
   it('does nothing on a successful response', async () => {
@@ -11,6 +11,21 @@ describe('throwOnError', () => {
     await expect(throwOnError(new Response(body, { status: 400 }), 'trip')).rejects.toThrow(
       /OSRM \/trip responded 400.*NotImplemented/s,
     );
+  });
+
+  it('throws OsrmUnroutableError (not a generic Error) when OSRM says no trip is possible', async () => {
+    // Verified live: the public demo server delivers this as HTTP 400, e.g. for a
+    // Kuala Lumpur -> Bali "driving" request with no road/ferry connection.
+    const body = JSON.stringify({ code: 'NoTrips', message: 'No trip visiting all destinations possible.' });
+    await expect(throwOnError(new Response(body, { status: 400 }), 'trip')).rejects.toBeInstanceOf(
+      OsrmUnroutableError,
+    );
+  });
+
+  it('does not misclassify an unrelated error code as unroutable', async () => {
+    const body = JSON.stringify({ code: 'InvalidUrl', message: 'URL string is invalid' });
+    const err = await throwOnError(new Response(body, { status: 400 }), 'trip').catch((e) => e);
+    expect(err).not.toBeInstanceOf(OsrmUnroutableError);
   });
 });
 
@@ -87,6 +102,13 @@ describe('toTripResult', () => {
       toTripResult(stops, { code: 'NoTrip' }, { mode: 'driving', roundTrip: false }),
     ).toThrow(/NoTrip/);
   });
+
+  it('throws OsrmUnroutableError specifically for an unroutable code', () => {
+    const stops = [stop('a', 1, 1), stop('b', 2, 2)];
+    expect(() =>
+      toTripResult(stops, { code: 'NoTrips' }, { mode: 'driving', roundTrip: false }),
+    ).toThrow(OsrmUnroutableError);
+  });
 });
 
 const okRouteResponse = (legCount: number) => ({
@@ -133,6 +155,13 @@ describe('toRouteResult', () => {
     expect(() =>
       toRouteResult(stops, { code: 'NoRoute' }, { mode: 'driving', roundTrip: false }),
     ).toThrow(/NoRoute/);
+  });
+
+  it('throws OsrmUnroutableError specifically for an unroutable code', () => {
+    const stops = [stop('a', 1, 1), stop('b', 2, 2)];
+    expect(() =>
+      toRouteResult(stops, { code: 'NoRoute' }, { mode: 'driving', roundTrip: false }),
+    ).toThrow(OsrmUnroutableError);
   });
 
   it('wraps the closing leg back to the first stop on a round trip', () => {
