@@ -84,6 +84,17 @@ export function MapView({
     [groups, clusterZoom, selectedStopId],
   );
   const placeIndexById = useMemo(() => new Map(places.map((p, i) => [p.id, i])), [places]);
+  // Latest places without re-running the init effect — the resize/refit fix below
+  // needs them, but must stay mount-only so it shares maplibre's own map instance.
+  const placesRef = useRef(places);
+  placesRef.current = places;
+
+  // --- fit to all stops on first paint ------------------------------------
+  // Hoisted above the init effect (which reads fittedRef/refitOnceRef) — the ref
+  // objects are stable across renders regardless of declaration order, but this
+  // keeps the resize workaround's dependency readable top-to-bottom.
+  const fittedRef = useRef(false);
+  const refitOnceRef = useRef(false);
 
   // --- init ---------------------------------------------------------------
   useEffect(() => {
@@ -112,7 +123,60 @@ export function MapView({
       setCenterLat(map.getCenter().lat);
     });
 
+    // Production-only bug: on a first-ever client-side navigation into a route
+    // whose CSS chunk hasn't applied yet, .mapWrap can still be 0-height at the
+    // instant this effect runs. MapLibre has its own internal ResizeObserver, but
+    // it deliberately discards that FIRST delivery as redundant with construction —
+    // so if 0 -> real size happens within that one delivery, MapLibre never learns
+    // the container changed, and the canvas is stuck at its 300px fallback until
+    // something else (a manual refresh) forces a fresh mount. This second,
+    // independent observer doesn't discard anything, so it catches exactly that case.
+    //
+    // Seeded from the container's actual size right now (not a hardcoded 0,0) so an
+    // already-fine load's own first delivery isn't mistaken for a real change.
+    // MapLibre's own fallback for an unmeasurable container is a hardcoded 300px —
+    // well below that is "this container hasn't been laid out yet", not a real size.
+    const DEGENERATE_HEIGHT_PX = 50;
+    const initialRect = containerRef.current.getBoundingClientRect();
+    let lastW = initialRect.width;
+    let lastH = initialRect.height;
+    const ro = new ResizeObserver(([entry]) => {
+      if (!mapRef.current) return;
+      const { width, height } = entry.contentRect;
+      if (width === lastW && height === lastH) return;
+      const grewOutOfDegenerateHeight = lastH < DEGENERATE_HEIGHT_PX && height >= DEGENERATE_HEIGHT_PX;
+      lastW = width;
+      lastH = height;
+      map.resize();
+      // Test-only hook, dead code in production: this exact race (a resize
+      // MapLibre's own observer would discard as its "first" delivery) is
+      // impractical to force deterministically from outside the page in an
+      // e2e test — the timing depends on React's mount instant. This counter
+      // lets a dev-fixture test confirm THIS code path specifically ran,
+      // rather than only that the canvas eventually looks right (which
+      // MapLibre's own observer already achieves on its own for any
+      // non-first delivery, so a size-only assertion can't tell them apart).
+      if (process.env.NODE_ENV !== 'production') {
+        const w = window as unknown as { __mapResizeObserverFired?: number };
+        w.__mapResizeObserverFired = (w.__mapResizeObserverFired ?? 0) + 1;
+      }
+      // fitBounds (the "fit to all stops on first paint" effect below) computes
+      // its camera against whatever size the container had at that moment. If it
+      // ran against a degenerate (e.g. 0px-tall) size, resize() alone fixes the
+      // canvas but leaves the camera fitted to the wrong aspect ratio — redo the
+      // fit exactly once to correct it. Gated on actually recovering FROM a
+      // degenerate height (not just "any resize after the first fit"), so an
+      // ordinary later window resize never re-fights the user's own panning/zooming.
+      if (grewOutOfDegenerateHeight && fittedRef.current && !refitOnceRef.current) {
+        refitOnceRef.current = true;
+        const pts = placesRef.current.filter((p) => p.lat !== null && p.lon !== null);
+        if (pts.length) fitTo(map, pts, true);
+      }
+    });
+    ro.observe(containerRef.current);
+
     return () => {
+      ro.disconnect();
       markersRef.current.forEach((m) => m.remove());
       markersRef.current.clear();
       map.remove();
@@ -313,7 +377,6 @@ export function MapView({
   }, [markerItems, places, placeIndexById, selectedStopId, reducedMotion]);
 
   // --- fit to all stops on first paint ------------------------------------
-  const fittedRef = useRef(false);
   useEffect(() => {
     const map = mapRef.current;
     if (!map || fittedRef.current) return;
@@ -364,8 +427,8 @@ export function MapView({
   const showBordersBadge = grouped && basemapLayerIds(styleUrl).boundaryLayerIds.length > 0;
 
   return (
-    <div className={styles.mapWrap}>
-      <div ref={containerRef} className={styles.mapCanvas} aria-hidden="true" />
+    <div className={styles.mapWrap} data-testid="map-wrap">
+      <div ref={containerRef} className={styles.mapCanvas} data-testid="map-canvas" aria-hidden="true" />
 
       {/* Purely visual chrome — decorative like the rest of the map (see the module
           comment on markers above). The facts it restates (country names, whether
