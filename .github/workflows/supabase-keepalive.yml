@@ -1,8 +1,11 @@
 name: Supabase keepalive
 
-# Supabase free tier pauses a project after 7 days with no API activity.
-# Daily cadence leaves headroom against that window even if a scheduled
-# run gets delayed or skipped.
+# Supabase free tier pauses a project after 7 days with no activity. That's tracked by
+# real database writes, not GET/SELECT traffic through PostgREST — a read-only ping
+# still gets logged but doesn't reset the clock. So this writes to the dedicated
+# `keepalive` table (supabase/migrations/0004_keepalive.sql) using the service-role
+# key, since that table has RLS enabled with zero policies. Daily cadence leaves
+# headroom against the 7-day window even if a scheduled run gets delayed or skipped.
 on:
   schedule:
     - cron: '37 6 * * *'
@@ -15,14 +18,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Query PostgREST
+      - name: Write to keepalive table
         env:
           SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
           curl --fail --silent --show-error \
                --retry 3 --retry-all-errors --retry-delay 15 --max-time 30 \
                -o /dev/null -w 'HTTP %{http_code} in %{time_total}s\n' \
-               -H "apikey: $SUPABASE_ANON_KEY" \
-               -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
-               "$SUPABASE_URL/rest/v1/plans?select=id&limit=1"
+               -X PATCH \
+               -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+               -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+               -H "Content-Type: application/json" \
+               -H "Prefer: return=minimal" \
+               -d "{\"pinged_at\":\"$(date -u +%FT%TZ)\"}" \
+               "$SUPABASE_URL/rest/v1/keepalive?id=eq.1"
