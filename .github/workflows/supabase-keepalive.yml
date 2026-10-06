@@ -6,6 +6,10 @@ name: Supabase keepalive
 # `keepalive` table (supabase/migrations/0004_keepalive.sql) using the service-role
 # key, since that table has RLS enabled with zero policies. Daily cadence leaves
 # headroom against the 7-day window even if a scheduled run gets delayed or skipped.
+#
+# The write is an upsert and the response is checked: a bare PATCH answers 204 even when
+# it matches zero rows (e.g. the seed row is missing), which would make this job go green
+# without ever touching the database.
 on:
   schedule:
     - cron: '37 6 * * *'
@@ -23,13 +27,21 @@ jobs:
           SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
+          body=$(mktemp)
           curl --fail --silent --show-error \
                --retry 3 --retry-all-errors --retry-delay 15 --max-time 30 \
-               -o /dev/null -w 'HTTP %{http_code} in %{time_total}s\n' \
-               -X PATCH \
+               -o "$body" -w 'HTTP %{http_code} in %{time_total}s\n' \
+               -X POST \
                -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
                -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
                -H "Content-Type: application/json" \
-               -H "Prefer: return=minimal" \
-               -d "{\"pinged_at\":\"$(date -u +%FT%TZ)\"}" \
-               "$SUPABASE_URL/rest/v1/keepalive?id=eq.1"
+               -H "Prefer: resolution=merge-duplicates,return=representation" \
+               -d "{\"id\":1,\"pinged_at\":\"$(date -u +%FT%TZ)\"}" \
+               "$SUPABASE_URL/rest/v1/keepalive?on_conflict=id"
+          # Must echo back exactly the one row we wrote.
+          if [ "$(jq 'length' "$body")" != "1" ]; then
+            echo "::error::keepalive upsert returned no row — nothing was written"
+            cat "$body"
+            exit 1
+          fi
+          jq -r '"keepalive row now: \(.[0].pinged_at)"' "$body"
