@@ -178,14 +178,15 @@ export function MapView({
     const GESTURE_EVENTS = ['wheel', 'pointerdown', 'touchstart'] as const;
     GESTURE_EVENTS.forEach((type) => canvasContainer.addEventListener(type, userTookCamera, { passive: true }));
 
-    // Production-only bug: on a first-ever client-side navigation into a route
-    // whose CSS chunk hasn't applied yet, .mapWrap can still be 0-height at the
-    // instant this effect runs. MapLibre has its own internal ResizeObserver, but
-    // it deliberately discards that FIRST delivery as redundant with construction —
-    // so if 0 -> real size happens within that one delivery, MapLibre never learns
-    // the container changed, and the canvas is stuck at its 300px fallback until
-    // something else (a manual refresh) forces a fresh mount. This second,
-    // independent observer doesn't discard anything, so it catches exactly that case.
+    // Keeps the canvas and the automatic camera fit in step with the container's
+    // real size. MapLibre has its own internal ResizeObserver, but it discards its
+    // FIRST delivery as redundant with construction — a container that is 0px at
+    // construction and real-sized one frame later would leave the canvas stuck at
+    // its 300px fallback. This observer discards nothing.
+    //
+    // (It was first added for the "map empty until refresh" report, on the theory
+    // of a late CSS chunk. The actual cause was a stylesheet-order clash on the
+    // container element itself — see the two-element comment in the JSX below.)
     //
     // Seeded from the container's actual size right now (not a hardcoded 0,0) so an
     // already-fine load's own first delivery isn't mistaken for a real change.
@@ -541,7 +542,17 @@ export function MapView({
 
   return (
     <div className={styles.mapWrap} data-testid="map-wrap">
-      <div ref={containerRef} className={styles.mapCanvas} data-testid="map-canvas" aria-hidden="true" />
+      {/* Two elements on purpose. MapLibre adds .maplibregl-map to its container,
+          and maplibre-gl.css gives that class `position: relative` — the same
+          weight as .mapCanvas's `position: absolute; inset: 0`, so whichever
+          stylesheet loads LAST wins. Opening a plan from /plans (which already
+          loaded planner.module.css) appends maplibre-gl.css after it, so the
+          container went `relative`, collapsed to 0px tall, and the map stayed
+          empty until a refresh restored the order. The outer box is ours, the
+          inner one is MapLibre's; neither stylesheet can undo the other. */}
+      <div className={styles.mapCanvas} data-testid="map-canvas" aria-hidden="true">
+        <div ref={containerRef} className={styles.mapRoot} />
+      </div>
 
       {/* Purely visual chrome — decorative like the rest of the map (see the module
           comment on markers above). The facts it restates (country names, whether
