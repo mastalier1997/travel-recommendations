@@ -93,5 +93,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/).*)'],
+  // Icons (app/icon.svg, app/apple-icon.png) are public files: no session refresh.
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|icon.svg|apple-icon.png|api/).*)'],
 };

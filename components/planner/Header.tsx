@@ -75,7 +75,10 @@ export function Header({
         {/* aria-label keeps the accessible name stable even though .wordmark's text
             is display:none below 768px — the logo mark alone is the mobile tap target. */}
         <Link href="/" className={styles.wordmarkLink} aria-label="Wanderlist — home">
-          <span className={styles.logo} aria-hidden="true" />
+          {/* The Wanderlist mark (Ink & One Line). Same file Next serves as the tab
+              icon (app/icon.svg). Decorative: the link's aria-label names it. */}
+          {/* eslint-disable-next-line @next/next/no-img-element -- a fixed 32px SVG; next/image adds nothing */}
+          <img src="/icon.svg" alt="" width={32} height={32} className={styles.logo} />
           <span className={styles.wordmark}>Wanderlist</span>
         </Link>
 

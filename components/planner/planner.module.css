@@ -53,17 +53,19 @@
 .wordmarkLink {
   display: flex;
   align-items: center;
-  gap: 9px;
+  /* Ink & One Line lockup: about a quarter of the tile between mark and name. */
+  gap: 8px;
   color: inherit;
   text-decoration: none;
   border-radius: var(--radius-sm);
 }
 .logo {
-  width: 22px;
-  height: 22px;
+  /* The mark carries its own dusk tile and rounded corners — never re-round,
+     outline or recolour it (Ink & One Line). 32px, as Evenset's header. */
+  display: block;
+  width: 32px;
+  height: 32px;
   flex: none;
-  border-radius: var(--radius-sm);
-  background: var(--accent-strong);
 }
 .wordmark {
   font-weight: 600;
@@ -1325,14 +1327,14 @@
   }
   /* The wordmark TEXT hides, but .wordmarkLink stays — it's the in-app way back
      to /plans (and so to every other plan) on mobile. The link's aria-label keeps
-     the accessible name stable even with the text gone. Padding pads the 22px logo
-     mark out to a 44px hit area without growing it visually. */
+     the accessible name stable even with the text gone. */
   .wordmark {
     display: none;
   }
   .wordmarkLink {
-    padding: 11px;
-    margin: -11px;
+    /* Pads the 32px mark out to a 44px hit area without growing it visually. */
+    padding: 6px;
+    margin: -6px;
   }
   /* "All plans" / "+ New plan": the logo link above covers it. Direct children
      only — the rename form's Cancel is a .ghost deeper inside .headerLeft. */

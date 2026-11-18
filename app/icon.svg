@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2=".4" y2="1"><stop offset="0" stop-color="#80726B"/><stop offset="1" stop-color="#EAD8CD"/></linearGradient>
+  <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#D9DADD"/></linearGradient>
+  <pattern id="hatch" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(-35)"><rect width="5" height="14" fill="#141414"/></pattern>
+  <clipPath id="lpin"><path d="M146 360C122 320 84 282 84 226A62 62 0 1 1 208 226C208 282 170 320 146 360Z"/></clipPath>
+  <mask id="shade"><rect x="0" y="292" width="512" height="220" fill="#fff"/></mask>
+</defs>
+<rect width="512" height="512" rx="112" fill="url(#bg)"/>
+<g transform="rotate(-8 256 256)" stroke-linecap="round" stroke-linejoin="round">
+<path fill="url(#paper)" d="M146 360C122 320 84 282 84 226A62 62 0 1 1 208 226C208 282 170 320 146 360Z"/>
+<rect width="512" height="512" fill="url(#hatch)" clip-path="url(#lpin)" mask="url(#shade)"/>
+<path fill="none" stroke="#141414" stroke-width="22" d="M146 360C122 320 84 282 84 226A62 62 0 1 1 208 226C208 282 170 320 146 360Z"/>
+<circle cx="146" cy="226" r="20" fill="none" stroke="#141414" stroke-width="22"/>
+<path fill="#141414" stroke="#141414" stroke-width="22" d="M366 276C342 236 304 198 304 142A62 62 0 1 1 428 142C428 198 390 236 366 276Z"/>
+<circle cx="366" cy="142" r="22" fill="none" stroke="#F2F2F0" stroke-width="10"/>
+<path fill="none" d="M146 382C146 440 252 436 262 366C272 300 366 352 366 298" stroke="#C2643F" stroke-width="24"/>
+<path d="M62 136L40 114M96 118L86 90M52 168L22 160M450 396L472 418M416 414L426 442M460 364L490 372" stroke="#141414" stroke-width="12"/>
+</g>
+</svg>
