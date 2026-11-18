@@ -339,7 +339,7 @@ export function Planner({ initialPlan, onSave, onRename, plans, account }: Props
         {isMobile ? (
           <BottomSheet
             expanded={sheetExpanded}
-            onToggle={() => setSheetExpanded((v) => !v)}
+            onExpandedChange={setSheetExpanded}
             locked={dragging}
             header={
               <>

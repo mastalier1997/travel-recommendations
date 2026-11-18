@@ -1,0 +1,202 @@
+/* Settings — Graphite tokens (app/globals.css). Single column, content-max 448px. */
+
+.wrap {
+  max-width: 448px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  margin: 0 0 16px -4px;
+  padding: 0 4px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--text-muted);
+  text-decoration: none;
+  border-radius: var(--radius);
+}
+.back:hover {
+  color: var(--text);
+}
+
+/* Graphite display: one per screen. */
+.title {
+  margin: 0;
+  font-size: 32px;
+  line-height: 38px;
+  font-weight: 700;
+}
+.note {
+  margin: 4px 0 32px;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--text-muted);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sectionTitle {
+  margin: 0;
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 600;
+}
+
+/* Graphite Card: --card surface, border, radius-xl, no shadow. */
+.card {
+  padding: 16px;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-xl);
+}
+
+.fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.legend {
+  padding: 0;
+  margin-bottom: 8px;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 500;
+}
+.fieldHint {
+  margin: -4px 0 12px;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--text-muted);
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+}
+.option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: var(--control-touch);
+  padding: 6px 4px;
+  font-size: 16px;
+  line-height: 24px;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.option + .option {
+  border-top: 1px solid var(--border-hairline);
+}
+.option input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--accent-strong);
+}
+.optionText {
+  display: flex;
+  flex-direction: column;
+}
+.optionHint {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--text-muted);
+}
+
+/* --- accent swatches ------------------------------------------------------- */
+
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+/* The radio itself covers the swatch (invisible, but still the focusable and
+   clickable control); the dot underneath shows the state. 44px on every device:
+   this page has the room. */
+.swatch {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--control-touch);
+  height: var(--control-touch);
+  cursor: pointer;
+}
+.swatchInput {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.swatchDot {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--pill);
+  /* Keeps pale swatches (Yellow) visible against the card. */
+  box-shadow: inset 0 0 0 1px rgba(var(--shadow-rgb), 0.22);
+  pointer-events: none;
+}
+.swatchInput:checked + .swatchDot {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+.swatchInput:focus-visible + .swatchDot {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-hairline);
+}
+.previewLabel {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--text-muted);
+}
+.previewRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.previewButton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-on-accent);
+  background: var(--accent-strong);
+  border-radius: var(--radius);
+  white-space: nowrap;
+}
+.previewRoute {
+  flex: 1;
+  height: 6px;
+  border-radius: var(--pill);
+  background: var(--accent-strong);
+}
+.previewLink {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--accent-strong);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

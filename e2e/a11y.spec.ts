@@ -13,7 +13,7 @@ const SCHEMES = ['light', 'dark'] as const;
 // must survive an outside click, unlike a stateless command menu) — so it's
 // left open alongside whichever popover gets clicked last, on purpose.
 async function openPopovers(page: Page) {
-  for (const name of [/^Export$/, /^Theme:/, /^Account:/, /^Actions for stop/, /^Rename plan,/]) {
+  for (const name of [/^Export$/, /^Account:/, /^Actions for stop/, /^Rename plan,/]) {
     const trigger = page.getByRole('button', { name });
     if (await trigger.count()) await trigger.first().click();
   }

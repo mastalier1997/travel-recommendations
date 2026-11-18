@@ -38,7 +38,7 @@ test.describe('planner header on a phone', () => {
     const title = await box(page.getByRole('heading', { level: 1, name: TITLE }));
     const rename = await box(page.getByRole('button', { name: `Rename plan, ${TITLE}` }));
     const exportBtn = await box(page.getByRole('button', { name: 'Export' }));
-    const theme = await box(page.getByRole('button', { name: /^Theme:/ }));
+    const theme = await box(page.getByRole('button', { name: 'Dark mode' }));
     const account = await box(page.getByRole('button', { name: /^Account:/ }));
 
     // Same row: every vertical centre within the header's band.
@@ -55,7 +55,7 @@ test.describe('planner header on a phone', () => {
 
   test('header controls meet the 44px touch target', async ({ page }) => {
     await gotoPlanner(page);
-    for (const name of [`Rename plan, ${TITLE}`, 'Export', /^Theme:/, /^Account:/]) {
+    for (const name of [`Rename plan, ${TITLE}`, 'Export', 'Dark mode', /^Account:/]) {
       const b = await box(page.getByRole('button', { name }));
       expect(b.height, String(name)).toBeGreaterThanOrEqual(44);
     }

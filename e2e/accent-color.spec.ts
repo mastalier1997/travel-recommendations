@@ -2,8 +2,8 @@ import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { ACCENT_PRESETS, resolveAccent } from '../lib/theme/accent';
 
-// The accent colour picker in the theme menu (lib/theme/accent.ts — the gym
-// app's 11 presets, adjusted per mode for contrast).
+// The accent colour picker on /settings (lib/theme/accent.ts — the gym app's 11
+// presets, adjusted per mode for contrast).
 
 const rgb = (hex: string) => {
   const n = parseInt(hex.slice(1), 16);
@@ -12,10 +12,11 @@ const rgb = (hex: string) => {
 
 const optimizeButton = (page: Page) => page.getByRole('button', { name: /optimize route|re-optimize|^route$/i }).first();
 
+/** Pick on the settings page, then come back to the planner — the real round trip. */
 async function pickAccent(page: Page, label: string) {
-  await page.getByRole('button', { name: /^Theme:/ }).click();
+  await page.goto('/settings');
   await page.getByRole('radio', { name: label, exact: true }).check();
-  await page.keyboard.press('Escape');
+  await page.goto('/dev/fixture/sample');
 }
 
 test('defaults to Graphite violet', async ({ page }) => {
@@ -26,16 +27,15 @@ test('defaults to Graphite violet', async ({ page }) => {
 
 test('picking a colour recolours the app and survives a reload', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
-  await page.goto('/dev/fixture/sample');
+  await page.goto('/settings');
 
-  await page.getByRole('button', { name: /^Theme:/ }).click();
   const teal = page.getByRole('radio', { name: 'Teal', exact: true });
   await teal.check();
   await expect(teal).toBeChecked();
   // Named in text too, not shown by colour alone.
-  await expect(page.locator('[popover]:popover-open').getByText('Teal', { exact: true })).toBeVisible();
-  await page.keyboard.press('Escape');
+  await expect(page.getByText('Teal', { exact: true })).toBeVisible();
 
+  await page.goto('/dev/fixture/sample');
   const tealLight = rgb(resolveAccent('teal', 'light'));
   await expect(optimizeButton(page)).toHaveCSS('background-color', tealLight);
   await expect(optimizeButton(page)).toHaveCSS('color', 'rgb(255, 255, 255)');
@@ -49,7 +49,6 @@ test('picking a colour recolours the app and survives a reload', async ({ page }
 
 test('dark mode uses the dark variant of the picked colour', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
-  await page.goto('/dev/fixture/sample');
   await pickAccent(page, 'Amber');
   await expect(optimizeButton(page)).toHaveCSS('background-color', rgb(resolveAccent('orange', 'dark')));
   // --primary-foreground in dark: near-black text on the accent fill.
@@ -58,13 +57,10 @@ test('dark mode uses the dark variant of the picked colour', async ({ page }) =>
 
 test('switching light/dark after picking keeps the colour, in the right variant', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
-  await page.goto('/dev/fixture/sample');
   await pickAccent(page, 'Pink');
   await expect(optimizeButton(page)).toHaveCSS('background-color', rgb(resolveAccent('pink', 'light')));
 
-  await page.getByRole('button', { name: /^Theme:/ }).click();
-  await page.getByRole('radio', { name: 'Dark', exact: true }).check();
-  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Dark mode' }).click();
   await expect(optimizeButton(page)).toHaveCSS('background-color', rgb(resolveAccent('pink', 'dark')));
 });
 

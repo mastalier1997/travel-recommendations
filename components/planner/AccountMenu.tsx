@@ -1,6 +1,7 @@
 'use client';
 
 import { useId, useRef } from 'react';
+import Link from 'next/link';
 import { signOut } from '@/app/login/actions';
 import { usePopoverPosition } from '@/lib/hooks/usePopoverPosition';
 import styles from './planner.module.css';
@@ -35,6 +36,9 @@ export function AccountMenu({ email }: Props) {
       <div id={menuId} popover="auto" ref={ref} className={styles.menu}>
         <p className={styles.menuIdentity}>{email}</p>
         <hr className={styles.menuRule} />
+        <Link href="/settings" className={styles.menuItem}>
+          Settings
+        </Link>
         <form action={signOut}>
           <button type="submit" className={`${styles.menuItem} ${styles.menuDanger}`}>
             Sign out
