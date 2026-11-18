@@ -2,11 +2,14 @@
 
 import { useSyncExternalStore } from 'react';
 import {
+  getAccentPreference,
   getThemePreference,
+  setAccentPreference,
   setThemePreference,
   subscribeTheme,
   type ThemePreference,
 } from '@/lib/theme/themeStore';
+import { DEFAULT_ACCENT, type AccentId } from '@/lib/theme/accent';
 import { usePrefersDark } from './useMediaQuery';
 
 const SERVER_SNAPSHOT: ThemePreference = 'system';
@@ -22,4 +25,10 @@ export function useResolvedTheme(): 'light' | 'dark' {
   const [pref] = useThemePreference();
   const prefersDark = usePrefersDark();
   return pref === 'system' ? (prefersDark ? 'dark' : 'light') : pref;
+}
+
+/** The picked accent preset ('violet' etc.). Setter persists + applies immediately. */
+export function useAccentPreference(): [AccentId, (id: AccentId) => void] {
+  const id = useSyncExternalStore(subscribeTheme, getAccentPreference, () => DEFAULT_ACCENT);
+  return [id, setAccentPreference];
 }

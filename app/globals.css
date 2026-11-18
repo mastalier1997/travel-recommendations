@@ -23,7 +23,10 @@
   --card-foreground: #12171b;
   --popover: #ffffff;
   --popover-foreground: #12171b;
-  --primary: #6656c8;
+  /* The accent. --accent-light/--accent-dark are set on <html> by the colour
+     picker (lib/theme/accent.ts, applied by themeStore.ts and the no-flash script
+     in app/layout.tsx); unset, this is Graphite's default violet. */
+  --primary: var(--accent-light, #6656c8);
   --primary-foreground: #ffffff;
   --secondary: #e3e7e9;
   --secondary-foreground: #12171b;
@@ -35,7 +38,7 @@
   --success: #13703f;
   --border: #d8dde0;
   --input: #8b949e;
-  --ring: #6656c8;
+  --ring: var(--primary);
   --chart-2: #2f7fc9;
 
   --radius-sm: 6px; /* badges, checkboxes */
@@ -106,7 +109,7 @@
   --card-foreground: #e7ecee;
   --popover: #1c242b;
   --popover-foreground: #e7ecee;
-  --primary: #9084da;
+  --primary: var(--accent-dark, #9084da);
   --primary-foreground: #0c0f12;
   --secondary: #1c242b;
   --secondary-foreground: #e7ecee;
@@ -118,7 +121,6 @@
   --success: #34c77b;
   --border: #232b32;
   --input: #5d6872;
-  --ring: #9084da;
   --chart-2: #5596dc;
 
   --surface-hover: #232b32;
@@ -140,7 +142,7 @@
     --card-foreground: #e7ecee;
     --popover: #1c242b;
     --popover-foreground: #e7ecee;
-    --primary: #9084da;
+    --primary: var(--accent-dark, #9084da);
     --primary-foreground: #0c0f12;
     --secondary: #1c242b;
     --secondary-foreground: #e7ecee;
@@ -152,7 +154,6 @@
     --success: #34c77b;
     --border: #232b32;
     --input: #5d6872;
-    --ring: #9084da;
     --chart-2: #5596dc;
 
     --surface-hover: #232b32;

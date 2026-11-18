@@ -4,7 +4,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import maplibregl, { type LngLatBoundsLike } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Place, Route } from '@/lib/types';
-import { useResolvedTheme } from '@/lib/hooks/useTheme';
+import { useAccentPreference, useResolvedTheme } from '@/lib/hooks/useTheme';
+import { resolveAccent } from '@/lib/theme/accent';
 import { MAP_COLORS, mapStyleUrl, resolveMapTheme } from '@/lib/map/mapTheme';
 import { groupByCountry } from '@/lib/plan/groupByCountry';
 import { clusterByGroup } from '@/lib/map/clusterByGroup';
@@ -74,6 +75,10 @@ export function MapView({
 
   const uiTheme = useResolvedTheme();
   const mapTheme = resolveMapTheme(uiTheme, Boolean(KEY));
+  // The route line is the accent, resolved for the MAP's polarity (a dark UI over
+  // the keyless light basemap still draws the light-mode accent).
+  const [accent] = useAccentPreference();
+  const routeLineColour = resolveAccent(accent, mapTheme);
   const styleUrl = mapStyleUrl(mapTheme, KEY);
   const appliedStyleRef = useRef(styleUrl);
   // Reattaching the route layers is route-effect's job; style.load (fired on
@@ -276,14 +281,14 @@ export function MapView({
           type: 'line',
           source: 'route',
           layout: { 'line-cap': 'round', 'line-join': 'round' },
-          paint: { 'line-color': colors.routeLine, 'line-width': 6 },
+          paint: { 'line-color': routeLineColour, 'line-width': 6 },
         });
       }
       if (map.getLayer('route-casing')) {
         map.setPaintProperty('route-casing', 'line-color', colors.routeCasing);
       }
       if (map.getLayer('route-line')) {
-        map.setPaintProperty('route-line', 'line-color', routeStale ? colors.routeStale : colors.routeLine);
+        map.setPaintProperty('route-line', 'line-color', routeStale ? colors.routeStale : routeLineColour);
       }
 
       // Direct legs (no road route found — could be a ferry, a flight, or nothing
@@ -351,7 +356,7 @@ export function MapView({
     // theme change, when the source/layers above have just been wiped.
     applyRouteRef.current = apply;
     if (map.isStyleLoaded()) apply();
-  }, [route, routeStale, mapTheme, places]);
+  }, [route, routeStale, mapTheme, places, routeLineColour]);
 
   // --- continental-scale basemap toggles (borders, city labels) ------------
   useEffect(() => {

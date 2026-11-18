@@ -12,7 +12,7 @@ export const MAP_COLORS: Record<
 > = {
   light: {
     routeCasing: '#ffffff', // --background (Graphite light)
-    routeLine: '#6656c8', // --primary
+    routeLine: '#6656c8', // --primary for the default accent; MapView draws the picked accent instead (lib/theme/accent.ts)
     routeStale: '#8b949e', // --input
     direct: '#2f7fc9', // --chart-2, a distinct blue so a no-road-route leg never reads as a driving one — matches --direct-line
   },

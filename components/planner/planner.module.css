@@ -781,6 +781,68 @@
   margin: 0;
 }
 
+/* Theme menu: wide enough for a row of six colour swatches. Two classes so it
+   also wins over the plain .menu width in the mobile block below. Keep in sync
+   with MENU_WIDTH in ThemeToggle.tsx. */
+.menu.themeMenu {
+  width: 248px;
+}
+.accentFieldset {
+  border: 0;
+  margin: 0;
+  padding: 0 6px 4px;
+}
+.accentFieldset > legend {
+  padding: 0 4px;
+}
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 0 2px;
+}
+/* The radio itself covers the swatch (invisible, but still the focusable and
+   clickable control); the dot underneath shows the state. */
+.swatch {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+}
+.swatchInput {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.swatchDot {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--pill);
+  /* Keeps pale swatches (Yellow) visible against a white menu. */
+  box-shadow: inset 0 0 0 1px rgba(var(--shadow-rgb), 0.22);
+  pointer-events: none;
+}
+.swatchInput:checked + .swatchDot {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+.swatchInput:focus-visible + .swatchDot {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+.swatchName {
+  margin: 2px 4px 4px;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--text-subtle);
+}
+
 /* --- undo --------------------------------------------------------------- */
 
 .undo {
@@ -1364,6 +1426,17 @@
   .menuField,
   .jumpChips a {
     min-height: var(--control-touch);
+  }
+  .swatch {
+    width: var(--control-touch);
+    height: var(--control-touch);
+  }
+  .swatchDot {
+    width: 32px;
+    height: 32px;
+  }
+  .swatches {
+    gap: 4px;
   }
 }
 
