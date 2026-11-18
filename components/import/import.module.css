@@ -113,6 +113,9 @@
 }
 .errorSummary a {
   font-size: 13px;
+  /* Not the accent: on --amber-chip-bg the accent drops under 4.5:1 for several
+     presets (default violet in dark: 4.40:1). The underline marks it a link. */
+  color: var(--amber-chip-text);
 }
 
 .rows {

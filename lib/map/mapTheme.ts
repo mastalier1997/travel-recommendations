@@ -14,13 +14,16 @@ export const MAP_COLORS: Record<
     routeCasing: '#ffffff', // --background (Graphite light)
     routeLine: '#6656c8', // --primary for the default accent; MapView draws the picked accent instead (lib/theme/accent.ts)
     routeStale: '#8b949e', // --input
-    direct: '#2f7fc9', // --chart-2, a distinct blue so a no-road-route leg never reads as a driving one — matches --direct-line
+    // --foreground: achromatic, so no accent preset can coincide with it (the route
+    // line is the accent) — a no-road-route leg never reads as a driving one.
+    // Matches --direct-line in app/globals.css.
+    direct: '#12171b',
   },
   dark: {
     routeCasing: '#0c0f12', // --background (Graphite dark), near-black casing per the dark-mode polarity flip
     routeLine: '#9084da', // --primary
     routeStale: '#5d6872', // --input
-    direct: '#5596dc', // --chart-2
+    direct: '#e7ecee', // --foreground (dark)
   },
 };
 

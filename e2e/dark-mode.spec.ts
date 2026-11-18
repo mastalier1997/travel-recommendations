@@ -41,14 +41,14 @@ test.describe('dark mode (prefers-color-scheme)', () => {
     await page.goto('/dev/fixture/kl-bali');
     await expect(page.locator('[data-leg-mode="direct"]').first()).toHaveCSS(
       'border-left-color',
-      'rgb(47, 127, 201)', // --direct-line light = Graphite --chart-2 #2f7fc9
+      'rgb(18, 23, 27)', // --direct-line light = --foreground #12171b
     );
 
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.goto('/dev/fixture/kl-bali');
     await expect(page.locator('[data-leg-mode="direct"]').first()).toHaveCSS(
       'border-left-color',
-      'rgb(85, 150, 220)', // --direct-line dark = Graphite --chart-2 #5596dc
+      'rgb(231, 236, 238)', // --direct-line dark = --foreground #e7ecee
     );
   });
 });

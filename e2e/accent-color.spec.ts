@@ -68,6 +68,18 @@ test('switching light/dark after picking keeps the colour, in the right variant'
   await expect(optimizeButton(page)).toHaveCSS('background-color', rgb(resolveAccent('pink', 'dark')));
 });
 
+test('a junk stored value can’t blank the accent before hydration', async ({ page }) => {
+  // 'constructor' is a key every plain object inherits — the no-flash script used
+  // to look it up in the colour table, find a function, and set the accent to
+  // "undefined", leaving buttons and links with no colour.
+  await page.addInitScript(() => localStorage.setItem('wanderlist:accent', 'constructor'));
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto('/dev/fixture/sample');
+  const inline = await page.evaluate(() => document.documentElement.style.getPropertyValue('--accent-light'));
+  expect(inline).toBe('');
+  await expect(optimizeButton(page)).toHaveCSS('background-color', rgb('#6656c8'));
+});
+
 // Every colour in both schemes: the adjusted colours must keep all accent text
 // (links, Undo, buttons) at AA. kl-bali has the most accent-coloured text.
 for (const preset of ACCENT_PRESETS) {

@@ -219,6 +219,12 @@
 .error p {
   margin: 0;
 }
+/* Actions inside the amber banner (Reload the latest version, Remove X from
+   plan): the banner's own text colour, not the accent — on --amber-chip-bg the
+   accent drops under 4.5:1 for several presets. Underlined, so still a control. */
+.error .undoBtn {
+  color: var(--amber-chip-text);
+}
 /* Row of per-stop actions under an optimize failure — same flex-row-of-button
    shape as .undo, so buttons keep the 24px target size 2.5.8 wants even when the
    message above them wraps. */

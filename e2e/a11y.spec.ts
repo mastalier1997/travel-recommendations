@@ -59,3 +59,46 @@ for (const scheme of SCHEMES) {
     expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([]);
   });
 }
+
+// States the fixture routes never show on load: the amber warning surfaces. Their
+// actions used to be drawn in the accent colour, which drops under 4.5:1 on the
+// amber background for several presets (default violet in dark: 4.40:1) — and no
+// scan reached them. Run with the default accent and with Amber, the worst case.
+const WARNING_ACCENTS = ['violet', 'orange'] as const;
+
+for (const scheme of SCHEMES) {
+  for (const accent of WARNING_ACCENTS) {
+    test(`optimize-failure banner has no axe violations (${scheme}, ${accent})`, async ({ page }) => {
+      await page.addInitScript((id) => localStorage.setItem('wanderlist:accent', id), accent);
+      await page.emulateMedia({ colorScheme: scheme });
+      await page.goto('/dev/fixture/sample');
+      // MOCK always succeeds; stub the client's own call to reach the failure banner.
+      await page.route('**/api/optimize', (route) =>
+        route.fulfill({
+          status: 422,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Unreachable.', unreachable: { stopId: 'pl_fushimi' } }),
+        }),
+      );
+      await page.getByRole('button', { name: /^(Optimize route|Re-optimize)$/ }).click();
+      await expect(page.getByRole('button', { name: 'Remove Fushimi Inari Taisha from plan' })).toBeVisible();
+      const results = await new AxeBuilder({ page }).analyze();
+      expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([]);
+    });
+
+    test(`import error summary has no axe violations (${scheme}, ${accent})`, async ({ page }) => {
+      await page.addInitScript((id) => localStorage.setItem('wanderlist:accent', id), accent);
+      await page.emulateMedia({ colorScheme: scheme });
+      await page.goto('/dev/fixture/import');
+      // 'trigger geocode error' is a MOCK sentinel (app/api/geocode/route.ts): it
+      // leaves a row undecided, so confirming shows the summary with its links.
+      await page.getByLabel('One place per line').fill('trigger geocode error\nfushimi inari');
+      await page.getByRole('button', { name: 'Add places' }).click();
+      await expect(page.getByText('Could not reach the geocoder.', { exact: false })).toBeVisible({ timeout: 20_000 });
+      await page.getByRole('button', { name: /^Confirm \d+ places?$/ }).click();
+      await expect(page.getByText(/more places? before continuing/)).toBeVisible();
+      const results = await new AxeBuilder({ page }).analyze();
+      expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([]);
+    });
+  }
+}

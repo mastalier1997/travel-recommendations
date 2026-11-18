@@ -166,6 +166,17 @@ export function MapView({
     map.on('movestart', (e) => {
       if ((e as { originalEvent?: Event }).originalEvent) autoFitRef.current = false;
     });
+    // ...but not every gesture gets one: a wheel zoom is applied in a later render
+    // frame, detached from its event, so its movestart carries no originalEvent
+    // (and a pinch may not either). Any wheel, press or touch on the map itself
+    // means the user has taken the camera — markers sit in this container too,
+    // and a click on one moves the camera on purpose anyway.
+    const userTookCamera = () => {
+      autoFitRef.current = false;
+    };
+    const canvasContainer = map.getCanvasContainer();
+    const GESTURE_EVENTS = ['wheel', 'pointerdown', 'touchstart'] as const;
+    GESTURE_EVENTS.forEach((type) => canvasContainer.addEventListener(type, userTookCamera, { passive: true }));
 
     // Production-only bug: on a first-ever client-side navigation into a route
     // whose CSS chunk hasn't applied yet, .mapWrap can still be 0-height at the
@@ -216,6 +227,7 @@ export function MapView({
 
     return () => {
       ro.disconnect();
+      GESTURE_EVENTS.forEach((type) => canvasContainer.removeEventListener(type, userTookCamera));
       markersRef.current.forEach((m) => m.remove());
       markersRef.current.clear();
       map.remove();
@@ -465,9 +477,14 @@ export function MapView({
     if (!map) return;
     const optionsChanged = lastFitOptionsRef.current !== fitOptions;
     lastFitOptionsRef.current = fitOptions;
-    if (fittedRef.current && !(autoFitRef.current && optionsChanged)) return;
     const pts = places.filter((p) => p.lat !== null && p.lon !== null);
-    if (pts.length === 0) return;
+    // Every stop gone: whatever the camera shows now belongs to a trip that no
+    // longer exists, so the next first stop gets fitted again like a new plan's.
+    if (pts.length === 0) {
+      fittedRef.current = false;
+      return;
+    }
+    if (fittedRef.current && !(autoFitRef.current && optionsChanged)) return;
     autoFitRef.current = true;
     const { clientWidth, clientHeight } = map.getContainer();
     // Too small to fit into yet: the resize observer completes it.

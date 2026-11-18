@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 // resolved light/dark colour) is computed here on the server and inlined, so the
 // picked colour is on screen from the first paint instead of flashing violet.
 const ACCENTS = JSON.stringify(resolvedAccentTable());
-const THEME_SCRIPT = `(function(){try{var v=localStorage.getItem('wanderlist:theme');var d=(v==='light'||v==='dark')?v:(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=d;document.documentElement.style.colorScheme=d;var a=${ACCENTS}[localStorage.getItem('wanderlist:accent')];if(a){document.documentElement.style.setProperty('--accent-light',a.light);document.documentElement.style.setProperty('--accent-dark',a.dark);}}catch(e){}})();`;
+const THEME_SCRIPT = `(function(){try{var v=localStorage.getItem('wanderlist:theme');var d=(v==='light'||v==='dark')?v:(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=d;document.documentElement.style.colorScheme=d;var t=${ACCENTS},k=localStorage.getItem('wanderlist:accent'),a=Object.prototype.hasOwnProperty.call(t,k)&&t[k];if(a){document.documentElement.style.setProperty('--accent-light',a.light);document.documentElement.style.setProperty('--accent-dark',a.dark);}}catch(e){}})();`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

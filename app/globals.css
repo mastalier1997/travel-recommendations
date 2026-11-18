@@ -91,9 +91,11 @@
   --pin-ring: #ffffff;
   --pin-unresolved-bg: var(--popover);
   --danger-text: var(--destructive);
-  /* Same value as MAP_COLORS.light.direct (lib/map/mapTheme.ts) — kept in sync so
-     a direct leg's dashed map line and its list row edge can't drift apart. */
-  --direct-line: var(--chart-2);
+  /* Same value as MAP_COLORS.<mode>.direct (lib/map/mapTheme.ts) — kept in sync so
+     a direct leg's dashed map line and its list row edge can't drift apart.
+     Achromatic on purpose: the route is drawn in the accent, and a hue here could
+     coincide with one of the 11 presets (it did: blue = dark-mode Indigo). */
+  --direct-line: var(--foreground);
 
   --radius: var(--radius-md);
   --pill: var(--radius-full);
