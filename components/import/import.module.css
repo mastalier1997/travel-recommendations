@@ -1,9 +1,9 @@
-/* Track I — import screens (M4 paste/upload, M3 confirm). */
+/* Track I — import screens (M4 paste/upload, M3 confirm). Graphite tokens. */
 
 .wrap {
   max-width: 720px;
   margin: 0 auto;
-  padding: 56px 20px calc(var(--sticky-bar-h) + 40px);
+  padding: 48px 16px calc(var(--sticky-bar-h) + 40px);
 }
 
 .importScreen {
@@ -12,18 +12,19 @@
 
 .label {
   display: block;
-  font-size: 13px;
+  font-size: 14px;
+  line-height: 20px;
   font-weight: 500;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .textarea {
   width: 100%;
   font: inherit;
-  font-size: 14px;
+  font-size: 16px;
   padding: 12px;
   color: var(--text);
-  background: var(--surface);
+  background: var(--field);
   border: 1px solid var(--border-control);
   border-radius: var(--radius);
   resize: vertical;
@@ -36,27 +37,38 @@
   margin-top: 12px;
 }
 
+/* Graphite outline buttons; .primaryAction is the screen's one default button. */
 .importActions button,
 .scanBtn {
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
   color: var(--text);
-  background: var(--surface);
+  background: var(--field);
   border: 1px solid var(--border-control);
   border-radius: var(--radius);
-  padding: 9px 14px;
+  padding: 0 14px;
   min-height: 40px;
   cursor: pointer;
 }
+.importActions button:hover:not([disabled]),
+.scanBtn:hover:not([disabled]) {
+  background: var(--surface-hover);
+}
 .importActions button[disabled],
 .scanBtn[disabled] {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: default;
 }
-.importActions .on-accent {
+.importActions .primaryAction {
   color: var(--text-on-accent);
   background: var(--accent-strong);
   border-color: var(--accent-strong);
+}
+.importActions .primaryAction:hover:not([disabled]) {
+  background: var(--accent-strong-hover);
+  border-color: var(--accent-strong-hover);
 }
 
 .scanBtn {
@@ -64,19 +76,20 @@
 }
 
 .hint {
-  margin: 6px 0 0;
-  font-size: 11px;
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 18px;
   color: var(--text-subtle);
 }
 
 .error {
   margin: 0 0 16px;
   padding: 10px 12px;
-  font-size: 13px;
+  font-size: 14px;
   background: var(--amber-chip-bg);
   color: var(--amber-chip-text);
   border: 1px solid var(--amber-edge);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
 }
 
 /* --- confirm list (M3) ---------------------------------------------------- */
@@ -86,7 +99,7 @@
   padding: 12px 14px;
   background: var(--amber-chip-bg);
   border: 1px solid var(--amber-edge);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
 }
 .errorSummary p {
   margin: 0 0 6px;
@@ -108,14 +121,15 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
+/* Graphite Card. */
 .row {
-  padding: 14px;
-  background: var(--surface);
+  padding: 16px;
+  background: var(--bg-sunken);
   border: 1px solid var(--border-hairline-strong);
-  border-radius: var(--radius);
+  border-radius: var(--radius-xl);
 }
 
 .fieldset {
@@ -125,55 +139,59 @@
 }
 .fieldset legend {
   padding: 0 0 10px;
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 500;
 }
 .mono {
-  font-family: var(--font-mono);
-  font-size: 12px;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
 }
 
 .candidateLabel {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 10px;
+  padding: 10px 12px;
+  background: var(--field);
   border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-sm);
-  margin-bottom: 6px;
+  border-radius: var(--radius);
+  margin-bottom: 8px;
   cursor: pointer;
 }
+/* Graphite selected state: --primary border plus inset ring, nothing shifts. */
 .candidateLabel:has(input:checked) {
   border-color: var(--accent-strong);
-  background: var(--bg-sunken);
+  box-shadow: inset 0 0 0 1px var(--accent-strong);
 }
 .candidateLabel input {
   margin-right: 8px;
+  accent-color: var(--accent-strong);
 }
 .name {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
 }
 .meta {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
+  font-size: 13px;
   color: var(--text-subtle);
 }
 .categoryChip {
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 500;
-  padding: 1px 7px;
-  border-radius: var(--pill);
-  background: var(--bg-sunken);
-  color: var(--text-muted);
+  padding: 0 8px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-raised);
+  color: var(--text);
   white-space: nowrap;
 }
 .outlierWarning {
   display: block;
   margin-top: 4px;
-  font-size: 11px;
+  font-size: 13px;
   color: var(--danger-text);
   /* Never background alone — flattens under forced-colors; a border re-colours. */
   border-left: 2px solid var(--danger-text);
@@ -187,22 +205,26 @@
 }
 .retypeRow input {
   flex: 1;
+  min-width: 0;
   font: inherit;
-  font-size: 13px;
-  padding: 8px 10px;
+  font-size: 16px;
+  padding: 0 12px;
+  min-height: 40px;
   color: var(--text);
-  background: var(--surface);
+  background: var(--field);
   border: 1px solid var(--border-control);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius);
 }
 .retypeRow button {
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 500;
   color: var(--text);
-  background: var(--surface);
+  background: var(--field);
   border: 1px solid var(--border-control);
-  border-radius: var(--radius-sm);
-  padding: 8px 12px;
+  border-radius: var(--radius);
+  padding: 0 14px;
+  min-height: 40px;
   cursor: pointer;
 }
 
@@ -221,12 +243,13 @@
 
 .retryBtn {
   font: inherit;
-  font-size: 13px;
-  color: var(--accent-strong);
-  background: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  background: var(--field);
   border: 1px solid var(--border-control);
-  border-radius: var(--radius-sm);
-  padding: 6px 10px;
+  border-radius: var(--radius);
+  padding: 0 14px;
   cursor: pointer;
 }
 
@@ -246,12 +269,13 @@
 
 .removeBtn {
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 500;
   color: var(--danger-text);
-  background: none;
+  background: var(--field);
   border: 1px solid var(--border-control);
-  border-radius: var(--radius-sm);
-  padding: 6px 10px;
+  border-radius: var(--radius);
+  padding: 0 14px;
   cursor: pointer;
 }
 
@@ -276,17 +300,50 @@
   background: var(--accent-strong);
   border: 1px solid var(--accent-strong);
   border-radius: var(--radius);
-  padding: 10px 18px;
+  padding: 0 18px;
   min-height: 44px;
   cursor: pointer;
 }
+.stickyBar button:hover:not([disabled]) {
+  background: var(--accent-strong-hover);
+}
 .stickyBar button[disabled] {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: default;
+}
+/* Phones: the three actions used to wrap raggedly onto three rows. Graphite puts
+   the primary action full width, so: "Add places" across the top, the two
+   secondary actions side by side below it, "Scan text" full width under those. */
+@media (max-width: 767px) {
+  .importActions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .importActions .primaryAction {
+    grid-column: 1 / -1;
+  }
+  .importActions button {
+    padding: 0 8px;
+  }
+  .scanBtn {
+    width: 100%;
+  }
+}
+
+/* Graphite: 44px controls on touch screens. */
+@media (pointer: coarse) {
+  .importActions button,
+  .scanBtn,
+  .retypeRow input,
+  .retypeRow button,
+  .retryBtn,
+  .removeBtn {
+    min-height: var(--control-touch);
+  }
 }
 
 .warning {
   margin: 0;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--amber-chip-text);
 }

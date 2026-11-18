@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
 
-// app/globals.css: --bg is #fbfaf9 in light, #1a1815 under prefers-color-scheme: dark.
-const LIGHT_BG = 'rgb(251, 250, 249)';
-const DARK_BG = 'rgb(26, 24, 21)';
+// app/globals.css (Graphite): --background is #ffffff in light, #0c0f12 under prefers-color-scheme: dark.
+const LIGHT_BG = 'rgb(255, 255, 255)';
+const DARK_BG = 'rgb(12, 15, 18)';
 
 test.describe('dark mode (prefers-color-scheme)', () => {
   test('defaults to the light token set', async ({ page }) => {
@@ -20,11 +20,12 @@ test.describe('dark mode (prefers-color-scheme)', () => {
   });
 
   test('the primary action button never renders white text on the accent fill', async ({ page }) => {
-    // Regression guard for the failing 2.5:1 white-on-#f08a52 case the a11y review flagged.
+    // Regression guard: white on the dark-mode primary (#9084da) is ~3:1 and fails AA —
+    // the label must use --primary-foreground, which is the near-black background.
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.goto('/dev/fixture/sample');
     const optimizeBtn = page.getByRole('button', { name: /optimize route|re-optimize|^route$/i }).first();
-    await expect(optimizeBtn).toHaveCSS('color', 'rgb(26, 24, 21)'); // --text-on-accent dark = --bg
+    await expect(optimizeBtn).toHaveCSS('color', DARK_BG); // --primary-foreground dark = --background
   });
 
   // Non-text contrast (1.4.11) on a direct-leg row's dashed edge — axe can't check
@@ -40,14 +41,14 @@ test.describe('dark mode (prefers-color-scheme)', () => {
     await page.goto('/dev/fixture/kl-bali');
     await expect(page.locator('[data-leg-mode="direct"]').first()).toHaveCSS(
       'border-left-color',
-      'rgb(63, 124, 140)', // --direct-line light
+      'rgb(47, 127, 201)', // --direct-line light = Graphite --chart-2 #2f7fc9
     );
 
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.goto('/dev/fixture/kl-bali');
     await expect(page.locator('[data-leg-mode="direct"]').first()).toHaveCSS(
       'border-left-color',
-      'rgb(111, 179, 194)', // --direct-line dark
+      'rgb(85, 150, 220)', // --direct-line dark = Graphite --chart-2 #5596dc
     );
   });
 });

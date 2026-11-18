@@ -189,6 +189,15 @@ pending → resolving → single    (auto-accept when importance ≥ 0.45)
 
 ### Contrast — the design's tokens fail AA. Corrected set:
 
+> **Superseded (Nov 2026):** the app now uses the **Graphite** design system (system font
+> stack, graphite surfaces, violet `--primary`). `app/globals.css` holds Graphite's tokens
+> under their shadcn names and maps the app's semantic names (`--bg`, `--text`,
+> `--accent-strong`, …) onto them; its header comment lists the contrast rules every pair
+> was checked against, and `e2e/a11y.spec.ts` still runs axe in light and dark. The amber
+> warning set below survives as an app extension (Graphite has no warning colour). The
+> structural rules below (casing under the route line, pin ring + hairline, status as a
+> border not a background) still apply. The table is kept as history.
+
 | Token | Value | Note |
 |---|---|---|
 | `--text` | `#26221e` | unchanged, 15.8:1 |

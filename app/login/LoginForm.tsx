@@ -84,7 +84,7 @@ export function LoginForm({ next }: { next: string }) {
 
         <button
           type="submit"
-          className={`${styles.submit} on-accent`}
+          className={styles.submit}
           disabled={state === 'sending' || state === 'sent'}
         >
           {state === 'sending' ? 'Sending…' : 'Email me a link'}

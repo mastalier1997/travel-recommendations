@@ -1,11 +1,15 @@
+/* Graphite tokens (app/globals.css). Single column, content-max 448px. */
 .wrap {
-  max-width: 400px;
+  max-width: 448px;
   margin: 0 auto;
-  padding: 80px 20px;
+  padding: 64px 16px;
 }
 
+/* Graphite display: 32/38 bold, one per screen. */
 .title {
-  font-size: 24px;
+  font-size: 32px;
+  line-height: 38px;
+  font-weight: 700;
   margin: 0 0 24px;
 }
 
@@ -19,42 +23,43 @@
   font-size: 14px;
   font-weight: 500;
   color: var(--text);
-  background: var(--surface);
+  background: var(--field);
   border: 1px solid var(--border-control);
   border-radius: var(--radius);
-  padding: 11px 16px;
+  padding: 0 16px;
   min-height: 44px;
   cursor: pointer;
   width: 100%;
 }
 .google:hover:not(:disabled) {
-  background: var(--bg-sunken);
+  background: var(--surface-hover);
 }
 .google:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: default;
 }
 
 .divider {
   text-align: center;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-muted);
   margin: 16px 0;
 }
 
 .label {
-  font-size: 13px;
+  font-size: 14px;
+  line-height: 20px;
   font-weight: 500;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .input {
   font: inherit;
-  font-size: 15px;
-  padding: 10px 12px;
+  font-size: 16px;
+  padding: 0 12px;
   min-height: 44px;
   color: var(--text);
-  background: var(--surface);
+  background: var(--field);
   border: 1px solid var(--border-control);
   border-radius: var(--radius);
 }
@@ -63,8 +68,9 @@
 }
 
 .hint {
-  margin: 6px 0 18px;
-  font-size: 12px;
+  margin: 8px 0 20px;
+  font-size: 13px;
+  line-height: 18px;
   color: var(--text-muted);
 }
 
@@ -72,11 +78,12 @@
   font: inherit;
   font-size: 14px;
   font-weight: 500;
-  color: #fff;
+  /* Token, not #fff: white on the dark-mode primary is ~3:1 and fails AA. */
+  color: var(--text-on-accent);
   background: var(--accent-strong);
   border: 1px solid var(--accent-strong);
   border-radius: var(--radius);
-  padding: 11px 16px;
+  padding: 0 16px;
   min-height: 44px;
   cursor: pointer;
 }
@@ -85,12 +92,12 @@
   border-color: var(--accent-strong-hover);
 }
 .submit:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: default;
 }
 
 .message {
   margin: 16px 0 0;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-muted);
 }

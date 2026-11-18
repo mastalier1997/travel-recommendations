@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
 
-// app/globals.css: --bg is #fbfaf9 in light, #1a1815 in dark.
-const LIGHT_BG = 'rgb(251, 250, 249)';
-const DARK_BG = 'rgb(26, 24, 21)';
+// app/globals.css (Graphite): --background is #ffffff in light, #0c0f12 in dark.
+const LIGHT_BG = 'rgb(255, 255, 255)';
+const DARK_BG = 'rgb(12, 15, 18)';
 
 test.describe('manual theme toggle', () => {
   test('overrides the OS preference and survives a reload with no flash', async ({ page }) => {

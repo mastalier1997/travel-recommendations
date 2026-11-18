@@ -33,7 +33,7 @@ export default async function PlansPage() {
           placeholder="Japan – Spring 2026"
           maxLength={120}
         />
-        <button type="submit" className={`${styles.primary} on-accent`}>
+        <button type="submit" className={styles.primary}>
           Create plan
         </button>
       </form>

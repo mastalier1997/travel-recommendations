@@ -60,7 +60,7 @@ export function ImportScreen({ onSubmitText, onUploadFile, uploading, error }: P
       )}
 
       <div className={styles.importActions}>
-        <button type="button" className="on-accent" disabled={!text.trim()} onClick={() => submit('line')}>
+        <button type="button" className={styles.primaryAction} disabled={!text.trim()} onClick={() => submit('line')}>
           Add places
         </button>
         <button type="button" disabled={uploading} onClick={() => fileRef.current?.click()}>

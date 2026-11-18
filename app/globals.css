@@ -1,126 +1,168 @@
 /*
- * Design tokens. Values are the accessibility-corrected set — several hexes in the
- * original mockup failed WCAG AA and were replaced. Do not reintroduce #89837a,
- * #8d8880, #D9A13B or #9a6c15 as text or control colours.
+ * Design tokens: Graphite (claude.ai design system "Graphite", source of truth
+ * mastalier1997/design-system tokens.json). The first block holds Graphite's own
+ * values under their shadcn names; the second points the app's semantic names at
+ * them, so components keep reading --bg/--text/--accent-strong and get Graphite.
+ * Change a colour in the Graphite block, never in the alias block.
  *
- * Dark mode (superseding the old "out of scope for v1" note): a manual toggle
- * (lib/theme/themeStore.ts) sets `data-theme` on <html> and is the source of truth
- * once JS has run. The `prefers-color-scheme` media query below is the no-JS/
- * pre-hydration fallback only, scoped to `:root:not([data-theme])` so it never
- * fights the manual choice — hence the token list appearing twice; keep both in
- * sync. The dark hexes are corrected the same way the light set was: see PLAN.md
- * "Deltas from the design" for the ratios that forced each change.
+ * Dark mode: a manual toggle (lib/theme/themeStore.ts) sets `data-theme` on <html>
+ * and is the source of truth once JS has run. The `prefers-color-scheme` block is
+ * the no-JS/pre-hydration fallback only, scoped to `:root:not([data-theme])` so it
+ * never fights the manual choice. Keep the two dark blocks identical.
+ *
+ * Contrast (WCAG AA, checked for every pair this app draws — Graphite only checks
+ * its own): text pairs >= 4.5:1, control borders (--input) >= 3:1 against
+ * --background, which is why form fields and outline buttons fill with
+ * --background (--field), not --popover: --input on --popover is 2.76:1 in dark.
  */
 :root {
-  --bg: #fbfaf9;
-  --bg-sunken: #f7f6f3;
-  --bg-raised: #f6f4f1;
-  --surface: #ffffff;
-  --surface-translucent: rgba(255, 255, 255, 0.82);
-  --map-bg: #e2e6dc;
+  /* --- Graphite, light ------------------------------------------------------ */
+  --background: #ffffff;
+  --foreground: #12171b;
+  --card: #eef1f2;
+  --card-foreground: #12171b;
+  --popover: #ffffff;
+  --popover-foreground: #12171b;
+  --primary: #6656c8;
+  --primary-foreground: #ffffff;
+  --secondary: #e3e7e9;
+  --secondary-foreground: #12171b;
+  --muted: #eef1f2;
+  --muted-foreground: #5b6570;
+  --accent: #e3e7e9;
+  --accent-foreground: #12171b;
+  --destructive: #c93030;
+  --success: #13703f;
+  --border: #d8dde0;
+  --input: #8b949e;
+  --ring: #6656c8;
+  --chart-2: #2f7fc9;
 
-  --text: #26221e;
-  --text-muted: #726c64; /* 13px descriptions — 4.80:1 on --bg-sunken */
-  --text-subtle: #6f6960; /* 11px metadata */
-  --icon-muted: #8d8880; /* NON-TEXT ONLY — fails 4.5:1 as text */
-  --text-on-accent: #ffffff; /* text/icons drawn on a filled --accent surface */
+  --radius-sm: 6px; /* badges, checkboxes */
+  --radius-md: 8px; /* buttons, inputs */
+  --radius-lg: 10px; /* tab lists, alerts, menus */
+  --radius-xl: 14px; /* cards, sheets */
+  --radius-full: 9999px;
 
-  --accent: #c2643f; /* map pins, route polyline, type >= 24px only */
-  --accent-strong: #af5430; /* all accent text, links, primary button fill */
-  --accent-strong-hover: #963f1f;
+  --control-touch: 44px;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 
-  --border-hairline: #eae7e2; /* decorative rules only */
-  --border-hairline-strong: #ddd9d3;
-  --border-control: #9a9288; /* inputs, chips, buttons, drop zone — 3.07:1 */
+  /* --- App extensions Graphite has no token for ------------------------------ */
+  /* Hover fill inside popovers/cards. Light = Graphite --accent; dark needs one
+     step above --popover (which equals --accent in dark), so it borrows --border. */
+  --surface-hover: #e3e7e9;
+  /* Warning ("needs review"). Graphite has only destructive/success; this amber is
+     the app's AA-checked warning set (5.0:1 chip text, 3.0:1 edge on --card). */
+  --warning-text: #8a5f0f;
+  --warning-bg: #fbf1dc;
+  --warning-edge: #b8801f;
+  --shadow-rgb: 18, 23, 27;
 
-  --amber-edge: #b8801f;
-  --amber-chip-bg: #fbf1dc;
-  --amber-chip-text: #8a5f0f;
+  /* --- App names → Graphite ------------------------------------------------- */
+  --bg: var(--background);
+  --bg-sunken: var(--card); /* sidebar, bottom sheet */
+  --bg-raised: var(--secondary);
+  --surface: var(--popover); /* place cards, menus — one step up from the sidebar */
+  --field: var(--background); /* inputs, selects, outline buttons */
+  --surface-translucent: rgba(255, 255, 255, 0.86);
+  --map-bg: var(--muted);
+
+  --text: var(--foreground);
+  --text-muted: var(--muted-foreground);
+  --text-subtle: var(--muted-foreground);
+  --icon-muted: var(--muted-foreground);
+  --text-on-accent: var(--primary-foreground);
+
+  --accent-strong: var(--primary);
+  /* shadcn's hover:bg-primary/90, but mixed toward the text colour so the label
+     contrast only goes up (darker in light, lighter in dark). */
+  --accent-strong-hover: color-mix(in srgb, var(--primary) 88%, var(--foreground));
+
+  --border-hairline: var(--border);
+  --border-hairline-strong: var(--border);
+  --border-control: var(--input);
+
+  --amber-edge: var(--warning-edge);
+  --amber-chip-bg: var(--warning-bg);
+  --amber-chip-text: var(--warning-text);
   --pin-ring: #ffffff;
-  --pin-unresolved-bg: #ffffff;
-  --danger-text: #96331f;
+  --pin-unresolved-bg: var(--popover);
+  --danger-text: var(--destructive);
   /* Same value as MAP_COLORS.light.direct (lib/map/mapTheme.ts) — kept in sync so
      a direct leg's dashed map line and its list row edge can't drift apart. */
-  --direct-line: #3f7c8c;
-  --shadow-rgb: 40, 34, 28;
+  --direct-line: var(--chart-2);
 
-  --radius-sm: 4px;
-  --radius: 8px;
-  --radius-lg: 12px;
-  --pill: 999px;
+  --radius: var(--radius-md);
+  --pill: var(--radius-full);
 
-  --pin-size: 26px;
-  --sticky-bar-h: 64px;
-
-  --font-sans: var(--font-instrument-sans), system-ui, sans-serif;
-  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+  --pin-size: 28px;
+  --sticky-bar-h: 68px;
 }
 
 :root[data-theme='dark'] {
-  --bg: #1a1815;
-  --bg-sunken: #1e1b17;
-  --bg-raised: #2b271f;
-  --surface: #26231e;
-  --surface-translucent: rgba(26, 24, 21, 0.86);
-  --map-bg: #15140f;
+  --background: #0c0f12;
+  --foreground: #e7ecee;
+  --card: #141a1f;
+  --card-foreground: #e7ecee;
+  --popover: #1c242b;
+  --popover-foreground: #e7ecee;
+  --primary: #9084da;
+  --primary-foreground: #0c0f12;
+  --secondary: #1c242b;
+  --secondary-foreground: #e7ecee;
+  --muted: #141a1f;
+  --muted-foreground: #8b96a1;
+  --accent: #1c242b;
+  --accent-foreground: #e7ecee;
+  --destructive: #f25555;
+  --success: #34c77b;
+  --border: #232b32;
+  --input: #5d6872;
+  --ring: #9084da;
+  --chart-2: #5596dc;
 
-  --text: #f1ede6;
-  --text-muted: #a8a096; /* 6.1:1 on --surface, 5.8:1 on --bg-raised */
-  --text-subtle: #99917f; /* lifted from the mockup's #8f8879, which fails at 4.22:1 on --bg-raised */
-  --icon-muted: #8f8879;
-  --text-on-accent: #1a1815; /* white-on-accent is 2.5:1 in dark and must not be used */
-
-  /* No -strong variant needed for text in dark: #f08a52 alone passes 6–7:1 on every surface. */
-  --accent: #f08a52;
-  --accent-strong: #f08a52;
-  --accent-strong-hover: #e17f45;
-
-  --border-hairline: #34302a;
-  --border-hairline-strong: #443e36;
-  --border-control: #787268; /* mockup borders are ~1.2:1, decorative only — this is a new dark-specific value for 3:1 */
-
-  --amber-edge: #8a7639; /* lifted from the mockup's #6a5a2d (2.10:1) */
-  --amber-chip-bg: #312a1c;
-  --amber-chip-text: #e9b44c;
-  --pin-ring: var(--bg);
-  --pin-unresolved-bg: #2a251c;
-  --danger-text: #f0806e;
-  --direct-line: #6fb3c2; /* MAP_COLORS.dark.direct */
+  --surface-hover: #232b32;
+  --warning-text: #e9b44c;
+  --warning-bg: #312a1c;
+  --warning-edge: #8a7639;
   --shadow-rgb: 0, 0, 0;
+
+  --surface-translucent: rgba(12, 15, 18, 0.86);
+  --pin-ring: var(--background);
 }
 
 /* No-JS / pre-hydration fallback only — see the comment on the token block above. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
-    --bg: #1a1815;
-    --bg-sunken: #1e1b17;
-    --bg-raised: #2b271f;
-    --surface: #26231e;
-    --surface-translucent: rgba(26, 24, 21, 0.86);
-    --map-bg: #15140f;
+    --background: #0c0f12;
+    --foreground: #e7ecee;
+    --card: #141a1f;
+    --card-foreground: #e7ecee;
+    --popover: #1c242b;
+    --popover-foreground: #e7ecee;
+    --primary: #9084da;
+    --primary-foreground: #0c0f12;
+    --secondary: #1c242b;
+    --secondary-foreground: #e7ecee;
+    --muted: #141a1f;
+    --muted-foreground: #8b96a1;
+    --accent: #1c242b;
+    --accent-foreground: #e7ecee;
+    --destructive: #f25555;
+    --success: #34c77b;
+    --border: #232b32;
+    --input: #5d6872;
+    --ring: #9084da;
+    --chart-2: #5596dc;
 
-    --text: #f1ede6;
-    --text-muted: #a8a096;
-    --text-subtle: #99917f;
-    --icon-muted: #8f8879;
-    --text-on-accent: #1a1815;
-
-    --accent: #f08a52;
-    --accent-strong: #f08a52;
-    --accent-strong-hover: #e17f45;
-
-    --border-hairline: #34302a;
-    --border-hairline-strong: #443e36;
-    --border-control: #787268;
-
-    --amber-edge: #8a7639;
-    --amber-chip-bg: #312a1c;
-    --amber-chip-text: #e9b44c;
-    --pin-ring: var(--bg);
-    --pin-unresolved-bg: #2a251c;
-    --danger-text: #f0806e;
-    --direct-line: #6fb3c2;
+    --surface-hover: #232b32;
+    --warning-text: #e9b44c;
+    --warning-bg: #312a1c;
+    --warning-edge: #8a7639;
     --shadow-rgb: 0, 0, 0;
+
+    --surface-translucent: rgba(12, 15, 18, 0.86);
+    --pin-ring: var(--background);
   }
 }
 
@@ -139,22 +181,36 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
 }
 
 a {
   color: var(--accent-strong);
+  text-underline-offset: 3px;
 }
 
-/* One focus ring, everywhere. `outline` (not box-shadow) so forced-colors recolours it. */
+/* Graphite motion: 150ms ease-out on colour, border and background only. */
+button,
+a,
+input,
+select,
+textarea {
+  transition:
+    color 150ms ease-out,
+    background-color 150ms ease-out,
+    border-color 150ms ease-out;
+}
+
+/* One focus ring, everywhere: Graphite's --ring, on :focus-visible only. `outline`
+   (not box-shadow) so forced-colors recolours it. The 2px offset keeps it on the
+   page background, so it stays visible around primary-filled buttons too. */
 :focus-visible {
-  outline: 2px solid var(--text);
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
-}
-/* On a filled accent surface the dark ring disappears — invert it. */
-.on-accent:focus-visible {
-  outline-color: var(--surface);
 }
 
 /*

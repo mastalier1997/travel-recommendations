@@ -64,7 +64,8 @@ test.describe('continental scale — country grouping', () => {
 
   test('filtering narrows the list without renumbering stops', async ({ page }) => {
     await page.getByRole('searchbox').fill('Marienplatz');
-    await expect(page.getByText('Marienplatz')).toBeVisible();
+    // By role: the plain text also matches the (hidden) card-actions menu heading.
+    await expect(page.getByRole('button', { name: /^Stop \d+ of \d+: Marienplatz/ })).toBeVisible();
     await expect(page.getByText('Neuschwanstein Castle')).toBeHidden();
     // Ordinal stays the absolute itinerary position, not a recount of the filtered view.
     await expect(page.getByText(/^Stop 6 of 8:/)).toHaveCount(1);

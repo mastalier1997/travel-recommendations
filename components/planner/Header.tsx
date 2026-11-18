@@ -122,7 +122,9 @@ export function Header({
           </>
         )}
         {canImport && currentId && (
-          <Link href={`/plans/${currentId}/import`} className={styles.ghost}>
+          // Desktop only — on mobile the same link lives in the bottom sheet, where
+          // the header has no room for it (see Planner.tsx).
+          <Link href={`/plans/${currentId}/import`} className={`${styles.ghost} ${styles.desktopOnly}`}>
             Import places
           </Link>
         )}

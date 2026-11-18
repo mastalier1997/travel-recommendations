@@ -116,7 +116,7 @@ export function SummaryBar({ places, route, routeStale, onOptimize, busy }: Prop
         )}
         <button
           type="button"
-          className={`${styles.primary} on-accent`}
+          className={styles.primary}
           onClick={onOptimize}
           aria-disabled={busy}
         >

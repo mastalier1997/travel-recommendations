@@ -23,10 +23,15 @@ const CITY_LABEL_MIN_ZOOM = 6;
 const ZOOM_MEMO_STEP = 0.25;
 const quantizeZoom = (z: number) => Math.round(z / ZOOM_MEMO_STEP) * ZOOM_MEMO_STEP;
 
-/** Single source of truth for the map's starting view — used both to construct
- * the maplibregl.Map and to seed the mapZoom/centerLat state that drives
- * clustering/labels/scale before the first 'moveend' fires. */
+/** Fallback starting view, used only for a plan with no located stops yet. A plan
+ * WITH stops is constructed directly at its own bounds (see the init effect) —
+ * never here first and then moved, which used to leave the camera parked on this
+ * view until every one of its tiles had downloaded. */
 const INIT_VIEW = { center: [135.7, 34.9] as [number, number], zoom: 8 };
+
+/** Every camera fit (first paint, "Fit whole trip", cluster click, resize recovery). */
+const FIT_PADDING_PX = 72;
+const FIT_MAX_ZOOM = 14;
 
 // No key needed: OpenFreeMap's public instance is keyless and unmetered, so it's
 // a safe default rather than a blank background. Swap in MAPTILER_KEY for nicer
@@ -45,6 +50,9 @@ type Props = {
   reducedMotion: boolean;
   /** True while a card is being dragged — the map must stop competing for the gesture. */
   interactionLocked?: boolean;
+  /** Pixels at the bottom of the map covered by other UI (the mobile bottom sheet at
+   * peek). Camera fits keep stops above it rather than underneath it. */
+  bottomInset?: number;
 };
 
 export function MapView({
@@ -55,6 +63,7 @@ export function MapView({
   onSelectStop,
   reducedMotion,
   interactionLocked,
+  bottomInset = 0,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -88,29 +97,54 @@ export function MapView({
   // needs them, but must stay mount-only so it shares maplibre's own map instance.
   const placesRef = useRef(places);
   placesRef.current = places;
+  // Same reasoning: the init effect's first camera needs it, without re-running.
+  const fitOptions = useMemo(() => fitOptionsFor(bottomInset), [bottomInset]);
+  const fitOptionsRef = useRef(fitOptions);
+  fitOptionsRef.current = fitOptions;
 
-  // --- fit to all stops on first paint ------------------------------------
-  // Hoisted above the init effect (which reads fittedRef/refitOnceRef) — the ref
-  // objects are stable across renders regardless of declaration order, but this
-  // keeps the resize workaround's dependency readable top-to-bottom.
+  // --- camera auto-fit state ------------------------------------------------
+  // fittedRef: the trip has been fitted at least once. autoFitRef: the camera is
+  // still showing that automatic fit — the user hasn't panned/zoomed/selected since.
+  // While autoFitRef holds, any change to the container's size (a CSS chunk landing
+  // late, the server-rendered desktop layout switching to the mobile one during
+  // hydration, a phone rotating) refits to the new size: a fit computed against a
+  // 70px-wide or 0px-tall container is a wrong camera, not a user choice. The moment
+  // the user moves the map themselves, it's theirs and is never refitted behind them.
   const fittedRef = useRef(false);
-  const refitOnceRef = useRef(false);
+  const autoFitRef = useRef(false);
 
   // --- init ---------------------------------------------------------------
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
+    // Construct the map already looking at the trip. The old approach — start at a
+    // fixed view, then fitBounds on 'load' — meant 'load' had to wait for every tile
+    // of that fixed view (Kyoto) to download first. On a cold cache, or with one
+    // slow tile from the keyless tile server, the user stared at an empty map of
+    // Japan with every pin off-screen until a refresh served those tiles from cache.
+    const initialPts = placesRef.current.filter((p) => p.lat !== null && p.lon !== null);
+    const { width: initW, height: initH } = containerRef.current.getBoundingClientRect();
+    const fitsNow = canFitInto(initW, initH, fitOptionsRef.current);
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: appliedStyleRef.current,
-      center: INIT_VIEW.center,
-      zoom: INIT_VIEW.zoom,
+      ...(initialPts.length && fitsNow
+        ? { bounds: boundsFor(initialPts), fitBoundsOptions: fitOptionsRef.current }
+        : { center: INIT_VIEW.center, zoom: INIT_VIEW.zoom }),
       // Own controls live outside the aria-hidden subtree; the canvas itself must not
       // be a tab stop or a keyboard target.
       attributionControl: false,
       keyboard: false,
     });
     mapRef.current = map;
+    // Pending auto-fit even when the container was too small to fit into yet — the
+    // resize observer below completes it once the container has a real size.
+    autoFitRef.current = initialPts.length > 0;
+    fittedRef.current = initialPts.length > 0 && fitsNow;
+    // The constructor's camera moves fire no 'moveend' — seed the zoom/latitude that
+    // drive clustering, labels and the scale bar from where it actually landed.
+    setMapZoom(map.getZoom());
+    setCenterLat(map.getCenter().lat);
 
     map.getCanvas().setAttribute('aria-hidden', 'true');
     map.getCanvas().tabIndex = -1;
@@ -121,6 +155,11 @@ export function MapView({
     map.on('moveend', () => {
       setMapZoom(map.getZoom());
       setCenterLat(map.getCenter().lat);
+    });
+    // MapLibre attaches originalEvent only to moves started by a real gesture (drag,
+    // wheel, pinch) — never to this component's own fitBounds/easeTo calls.
+    map.on('movestart', (e) => {
+      if ((e as { originalEvent?: Event }).originalEvent) autoFitRef.current = false;
     });
 
     // Production-only bug: on a first-ever client-side navigation into a route
@@ -134,9 +173,6 @@ export function MapView({
     //
     // Seeded from the container's actual size right now (not a hardcoded 0,0) so an
     // already-fine load's own first delivery isn't mistaken for a real change.
-    // MapLibre's own fallback for an unmeasurable container is a hardcoded 300px —
-    // well below that is "this container hasn't been laid out yet", not a real size.
-    const DEGENERATE_HEIGHT_PX = 50;
     const initialRect = containerRef.current.getBoundingClientRect();
     let lastW = initialRect.width;
     let lastH = initialRect.height;
@@ -144,7 +180,6 @@ export function MapView({
       if (!mapRef.current) return;
       const { width, height } = entry.contentRect;
       if (width === lastW && height === lastH) return;
-      const grewOutOfDegenerateHeight = lastH < DEGENERATE_HEIGHT_PX && height >= DEGENERATE_HEIGHT_PX;
       lastW = width;
       lastH = height;
       map.resize();
@@ -160,17 +195,16 @@ export function MapView({
         const w = window as unknown as { __mapResizeObserverFired?: number };
         w.__mapResizeObserverFired = (w.__mapResizeObserverFired ?? 0) + 1;
       }
-      // fitBounds (the "fit to all stops on first paint" effect below) computes
-      // its camera against whatever size the container had at that moment. If it
-      // ran against a degenerate (e.g. 0px-tall) size, resize() alone fixes the
-      // canvas but leaves the camera fitted to the wrong aspect ratio — redo the
-      // fit exactly once to correct it. Gated on actually recovering FROM a
-      // degenerate height (not just "any resize after the first fit"), so an
-      // ordinary later window resize never re-fights the user's own panning/zooming.
-      if (grewOutOfDegenerateHeight && fittedRef.current && !refitOnceRef.current) {
-        refitOnceRef.current = true;
+      // resize() fixes the canvas but keeps the old centre/zoom, which were fitted
+      // to the old size — refit while the camera is still the automatic one (see
+      // autoFitRef above). Too small to fit into at all (MapLibre would just warn
+      // and leave the camera put) waits for the next, real size.
+      if (autoFitRef.current && canFitInto(width, height, fitOptionsRef.current)) {
         const pts = placesRef.current.filter((p) => p.lat !== null && p.lon !== null);
-        if (pts.length) fitTo(map, pts, true);
+        if (pts.length) {
+          fitTo(map, pts, true, fitOptionsRef.current);
+          fittedRef.current = true;
+        }
       }
     });
     ro.observe(containerRef.current);
@@ -397,7 +431,8 @@ export function MapView({
           // stops (40px cluster radius is well under 400m at zoom 14). Revisit only
           // if a report surfaces stops that share near-identical coordinates.
           const pts = item.memberIds.flatMap((id) => placeById.get(id) ?? []);
-          if (pts.length) fitTo(map, pts, reducedMotion);
+          autoFitRef.current = false;
+          if (pts.length) fitTo(map, pts, reducedMotion, fitOptions);
         };
       }
     });
@@ -408,17 +443,33 @@ export function MapView({
         markersRef.current.delete(key);
       }
     });
-  }, [markerItems, places, placeIndexById, selectedStopId, reducedMotion]);
+  }, [markerItems, places, placeIndexById, selectedStopId, reducedMotion, fitOptions]);
 
-  // --- fit to all stops on first paint ------------------------------------
+  // --- fit to all stops once they first exist -------------------------------
+  // A plan that already has stops was fitted at construction (init effect above).
+  // This covers one that gains its first located stop later (an empty plan, then
+  // "Add a stop"). Fitted immediately, not on 'load': the camera doesn't need the
+  // style or any tile, and waiting for 'load' is exactly what stranded the camera.
+  //
+  // Also refits when fitOptions change (the bottom-sheet inset appears when the
+  // layout turns mobile) while the camera is still the automatic fit. An ordinary
+  // places change (reorder, optimize) never refits an already-fitted camera.
+  const lastFitOptionsRef = useRef(fitOptions);
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || fittedRef.current) return;
+    if (!map) return;
+    const optionsChanged = lastFitOptionsRef.current !== fitOptions;
+    lastFitOptionsRef.current = fitOptions;
+    if (fittedRef.current && !(autoFitRef.current && optionsChanged)) return;
     const pts = places.filter((p) => p.lat !== null && p.lon !== null);
     if (pts.length === 0) return;
+    autoFitRef.current = true;
+    const { clientWidth, clientHeight } = map.getContainer();
+    // Too small to fit into yet: the resize observer completes it.
+    if (!canFitInto(clientWidth, clientHeight, fitOptions)) return;
     fittedRef.current = true;
-    map.once('load', () => fitTo(map, pts, true));
-  }, [places]);
+    fitTo(map, pts, true, fitOptions);
+  }, [places, fitOptions]);
 
   // --- follow selection ---------------------------------------------------
   useEffect(() => {
@@ -426,6 +477,7 @@ export function MapView({
     const p = places.find((x) => x.id === selectedStopId);
     if (!map || !p || p.lat === null || p.lon === null) return;
     const to = { center: [p.lon, p.lat] as [number, number], zoom: Math.max(map.getZoom(), 12) };
+    autoFitRef.current = false;
     if (reducedMotion) map.jumpTo(to);
     else map.easeTo({ ...to, duration: 600 });
   }, [selectedStopId, places, reducedMotion]);
@@ -446,12 +498,16 @@ export function MapView({
   const zoom = (delta: number) => {
     const map = mapRef.current;
     if (!map) return;
+    autoFitRef.current = false;
     map.easeTo({ zoom: map.getZoom() + delta, duration: reducedMotion ? 0 : 200 });
   };
 
   const fitAll = () => {
     const map = mapRef.current;
-    if (map) fitTo(map, places.filter((p) => p.lat !== null), reducedMotion);
+    if (!map) return;
+    // Back to the automatic fit: it follows container resizes again until the next move.
+    autoFitRef.current = fittedRef.current = true;
+    fitTo(map, places.filter((p) => p.lat !== null), reducedMotion, fitOptions);
   };
 
   const scale = scaleBar(mapZoom, centerLat);
@@ -515,9 +571,34 @@ export function MapView({
   );
 }
 
-function fitTo(map: maplibregl.Map, places: Place[], instant: boolean) {
+type FitOptions = maplibregl.FitBoundsOptions & { padding: Required<maplibregl.PaddingOptions> };
+
+function fitOptionsFor(bottomInset: number): FitOptions {
+  return {
+    padding: {
+      top: FIT_PADDING_PX,
+      right: FIT_PADDING_PX,
+      left: FIT_PADDING_PX,
+      bottom: FIT_PADDING_PX + bottomInset,
+    },
+    maxZoom: FIT_MAX_ZOOM,
+  };
+}
+
+/** Whether a container this size leaves any room once the fit padding is taken off —
+ * MapLibre's fitBounds just warns and leaves the camera where it was otherwise. */
+function canFitInto(width: number, height: number, { padding: pad }: FitOptions): boolean {
+  return width - pad.left - pad.right > 0 && height - pad.top - pad.bottom > 0;
+}
+
+function fitTo(map: maplibregl.Map, places: Place[], instant: boolean, options: maplibregl.FitBoundsOptions) {
   const pts = places.filter((p) => p.lat !== null && p.lon !== null);
   if (pts.length === 0) return;
+  map.fitBounds(boundsFor(pts), { ...options, duration: instant ? 0 : 500 });
+}
+
+/** Callers pass only located places (lat/lon non-null). */
+function boundsFor(pts: Place[]): LngLatBoundsLike {
   const lats = pts.map((p) => p.lat as number);
   // Antimeridian-safe, same technique as lib/map/mercator.ts's lonLatCentroid: unwrap
   // every longitude relative to the first point before taking min/max, so a trip like
@@ -532,9 +613,8 @@ function fitTo(map: maplibregl.Map, places: Place[], instant: boolean) {
     return first + d;
   });
   const wrap = (lon: number) => (((lon + 180) % 360) + 360) % 360 - 180;
-  const bounds: LngLatBoundsLike = [
+  return [
     [wrap(Math.min(...unwrappedLons)), Math.min(...lats)],
     [wrap(Math.max(...unwrappedLons)), Math.max(...lats)],
   ];
-  map.fitBounds(bounds, { padding: 72, duration: instant ? 0 : 500, maxZoom: 14 });
 }

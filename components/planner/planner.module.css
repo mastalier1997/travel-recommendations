@@ -1,4 +1,4 @@
-/* Track B — planner shell. Tokens come from app/globals.css. */
+/* Track B — planner shell. Tokens come from app/globals.css (Graphite). */
 
 .shell {
   display: flex;
@@ -39,8 +39,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 8px 20px;
-  background: var(--surface);
+  padding: 8px 16px;
+  background: var(--bg);
   border-bottom: 1px solid var(--border-hairline);
 }
 .headerLeft,
@@ -62,21 +62,22 @@
   width: 22px;
   height: 22px;
   flex: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--accent-strong);
 }
 .wordmark {
   font-weight: 600;
-  font-size: 15px;
+  font-size: 16px;
 }
 .select {
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text);
-  background: var(--surface);
+  background: var(--field);
   border: 1px solid var(--border-control);
   border-radius: var(--radius);
-  padding: 6px 8px;
+  padding: 0 8px;
+  min-height: 36px;
   max-width: 220px;
 }
 
@@ -89,7 +90,8 @@
 }
 .planTitle {
   margin: 0;
-  font-size: 15px;
+  font-size: 16px;
+  line-height: 24px;
   font-weight: 600;
   color: var(--text);
   /* CSS truncation only — the full text node stays intact for AT, unlike a JS
@@ -103,19 +105,18 @@
   flex: none;
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
-  font-size: 13px;
+  width: 36px;
+  height: 36px;
+  font-size: 14px;
   color: var(--text-subtle);
   background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
+  border: 0;
+  border-radius: var(--radius);
   cursor: pointer;
 }
 .renameTrigger:hover {
   color: var(--text);
-  background: var(--bg-sunken);
-  border-color: var(--border-control);
+  background: var(--surface-hover);
 }
 
 .renameForm {
@@ -129,11 +130,11 @@
   font: inherit;
   font-size: 14px;
   color: var(--text);
-  background: var(--surface);
+  background: var(--field);
   border: 1px solid var(--border-control);
   border-radius: var(--radius);
-  padding: 6px 8px;
-  min-height: 32px;
+  padding: 0 10px;
+  min-height: 36px;
   width: 22ch;
   min-width: 0;
 }
@@ -149,56 +150,66 @@
   z-index: 5;
   margin: 4px 0 0;
   padding: 6px 10px;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--danger-text);
   background: var(--surface);
   border: 1px solid var(--danger-text);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   white-space: nowrap;
 }
+/* Graphite "outline" button (also used on <a>: All plans, Import places). */
 .ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
   color: var(--text);
-  background: transparent;
+  text-decoration: none;
+  white-space: nowrap;
+  background: var(--field);
   border: 1px solid var(--border-control);
   border-radius: var(--radius);
-  padding: 7px 12px;
+  padding: 0 14px;
   cursor: pointer;
-  min-height: 34px;
+  min-height: 36px;
 }
 .ghost:hover {
-  background: var(--bg-sunken);
+  background: var(--surface-hover);
 }
 .saveStatus {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--text-subtle);
   white-space: nowrap;
 }
 
 .avatar {
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   flex: none;
   display: grid;
   place-items: center;
-  border-radius: 50%;
+  border-radius: var(--pill);
   background: var(--bg-raised);
   border: 1px solid var(--border-hairline-strong);
   /* Reset for when this class is on a <button> (AccountMenu) rather than the
      decorative <span> fixture mode uses — buttons don't inherit font by default. */
   font: inherit;
   padding: 0;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-subtle);
+  cursor: pointer;
 }
 
 .error {
   flex: none;
   margin: 0;
-  padding: 10px 20px;
-  font-size: 13px;
+  padding: 10px 16px;
+  font-size: 14px;
   background: var(--amber-chip-bg);
   color: var(--amber-chip-text);
   border-bottom: 1px solid var(--amber-edge);
@@ -252,28 +263,35 @@
   gap: 6px;
 }
 .mapControls button {
-  width: 36px;
-  height: 36px;
-  font-size: 16px;
+  width: 40px;
+  height: 40px;
+  font-size: 18px;
   line-height: 1;
   color: var(--text);
-  background: var(--surface);
+  background: var(--field);
   border: 1px solid var(--border-control);
   border-radius: var(--radius);
+  /* Floating over the map — one of the few places Graphite allows a shadow. */
+  box-shadow: 0 1px 3px rgba(var(--shadow-rgb), 0.16);
   cursor: pointer;
 }
 .mapControls button:hover {
-  background: var(--bg-sunken);
+  background: var(--surface-hover);
 }
 
 .attribution {
   position: absolute;
-  left: 8px;
+  /* Bottom-right, under the map controls: bottom-left is the scale bar's, and the
+     two used to sit on top of each other there. */
+  right: 8px;
   bottom: 6px;
+  max-width: calc(100% - 120px);
+  text-align: right;
   z-index: 2;
   margin: 0;
-  padding: 2px 6px;
-  font-size: 11px;
+  padding: 2px 8px;
+  font-size: 13px;
+  line-height: 18px;
   color: var(--text-subtle);
   background: var(--surface-translucent);
   border-radius: var(--radius-sm);
@@ -308,9 +326,10 @@
   margin: 12px 16px 0;
   padding: 10px 12px;
   font-size: 13px;
+  line-height: 18px;
   color: var(--text-muted);
   border: 1px dashed var(--border-control);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
 }
 
 /* --- add-a-stop search (ARIA combobox) ----------------------------------- */
@@ -323,16 +342,16 @@
 .addStopInput {
   width: 100%;
   font: inherit;
-  font-size: 13.5px;
+  font-size: 16px;
   color: var(--text);
-  background: var(--surface);
+  background: var(--field);
   border: 1px solid var(--border-control);
   border-radius: var(--radius);
-  padding: 9px 12px;
+  padding: 0 12px;
   min-height: 40px;
 }
 .addStopInput:focus-visible {
-  outline: 2px solid var(--text);
+  outline: 2px solid var(--ring);
   outline-offset: 1px;
 }
 .addStopPanel {
@@ -342,9 +361,9 @@
   top: calc(100% + 6px);
   z-index: 6;
   background: var(--surface);
-  border: 1px solid var(--border-control);
-  border-radius: var(--radius);
-  box-shadow: 0 18px 40px -14px rgba(var(--shadow-rgb), 0.34);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 12px 32px -12px rgba(var(--shadow-rgb), 0.3);
   overflow: hidden;
 }
 .addStopList {
@@ -355,13 +374,13 @@
   overflow-y: auto;
 }
 .addStopOption {
-  padding: 9px 10px;
+  padding: 10px;
   border-radius: var(--radius-sm);
-  font-size: 13.5px;
+  font-size: 14px;
   cursor: pointer;
 }
 .addStopOption[data-active='true'] {
-  background: var(--bg-sunken);
+  background: var(--surface-hover);
 }
 .addStopOption[aria-disabled='true'] {
   color: var(--text-subtle);
@@ -370,13 +389,13 @@
 .addStopEmpty {
   margin: 0;
   padding: 12px;
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--text-muted);
 }
 .addStopHint {
   margin: 0;
   padding: 8px 10px;
-  font-size: 11px;
+  font-size: 13px;
   color: var(--text-subtle);
   background: var(--bg-sunken);
   border-top: 1px solid var(--border-hairline);
@@ -397,11 +416,13 @@
 }
 .summaryLine {
   margin: 0;
-  font-size: 14px;
+  font-size: 16px;
+  line-height: 24px;
 }
 .summaryNote {
-  margin: 3px 0 0;
-  font-size: 11px;
+  margin: 2px 0 0;
+  font-size: 13px;
+  line-height: 18px;
   color: var(--text-subtle);
 }
 .countryBar {
@@ -411,7 +432,7 @@
   height: 6px;
   border-radius: var(--pill);
   overflow: hidden;
-  background: var(--bg-sunken);
+  background: var(--bg-raised);
 }
 .countryBarSegment {
   height: 100%;
@@ -423,25 +444,37 @@
   gap: 8px;
   flex: none;
 }
+/* Graphite Badge: label style, uppercase, never interactive. */
 .chip {
-  font-size: 11px;
-  font-weight: 500;
-  padding: 4px 8px;
-  border-radius: var(--pill);
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding: 0 8px;
+  border-radius: var(--radius-sm);
   background: var(--amber-chip-bg);
   color: var(--amber-chip-text);
   border: 1px solid var(--amber-edge);
   white-space: nowrap;
 }
+/* Graphite "default" button — the one primary action per screen. */
 .primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
+  line-height: 20px;
   color: var(--text-on-accent);
   background: var(--accent-strong);
   border: 1px solid var(--accent-strong);
   border-radius: var(--radius);
-  padding: 8px 14px;
+  padding: 0 16px;
   cursor: pointer;
   min-height: 36px;
   white-space: nowrap;
@@ -450,8 +483,9 @@
   background: var(--accent-strong-hover);
   border-color: var(--accent-strong-hover);
 }
-.primary[aria-disabled='true'] {
-  opacity: 0.55;
+.primary[aria-disabled='true'],
+.primary:disabled {
+  opacity: 0.5;
   cursor: default;
 }
 
@@ -471,15 +505,16 @@
   align-items: center;
   gap: 8px;
   margin: 0;
-  padding: 6px 0 6px 14px;
-  font-size: 11px;
+  padding: 6px 0 6px 16px;
+  font-size: 13px;
+  line-height: 18px;
   color: var(--text-subtle);
 }
 .legRule {
   width: 2px;
   height: 18px;
   flex: none;
-  background: var(--accent);
+  background: var(--primary);
   border-radius: 1px;
 }
 .legStale .legRule {
@@ -493,33 +528,35 @@
   background: none;
 }
 
+/* Graphite Card: --surface on the sidebar, 1px border, radius-xl, no shadow. */
 .card {
   display: flex;
+  align-items: flex-start;
   gap: 10px;
   padding: 12px;
   background: var(--surface);
   border: 1px solid var(--border-hairline);
-  /* border, not background: backgrounds flatten under forced-colors, borders recolour */
-  border-left: 3px solid transparent;
-  border-radius: var(--radius);
+  border-radius: var(--radius-xl);
 }
+/* Selected: a 2px inset --primary ring, so nothing shifts. Status cards recolour the
+   border itself (borders survive forced-colors, backgrounds don't); the badge and
+   the "Needs review" / unreachable text carry the meaning, never colour alone. */
 .card[data-selected='true'] {
   border-color: var(--accent-strong);
-  border-left-color: var(--accent-strong);
-  border-width: 2px;
-  border-left-width: 3px;
+  box-shadow: inset 0 0 0 1px var(--accent-strong);
 }
 .card[data-unresolved='true'] {
-  border-left-color: var(--amber-edge);
+  border-color: var(--amber-edge);
 }
 .card[data-unreachable='true'] {
-  border-left-color: var(--danger-text);
+  border-color: var(--danger-text);
 }
 
 .badge {
   flex: none;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
+  margin-top: 1px;
   display: grid;
   place-items: center;
   border-radius: 50%;
@@ -527,7 +564,7 @@
      token comments) — --accent-strong is the one that's actually meant for text/fills. */
   background: var(--accent-strong);
   color: var(--text-on-accent);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
 }
 .card[data-unresolved='true'] .badge {
@@ -580,37 +617,37 @@
 
 .actionsTrigger {
   flex: none;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   display: grid;
   place-items: center;
   background: none;
   border: 0;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius);
   color: var(--text-subtle);
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1;
   cursor: pointer;
 }
 .actionsTrigger:hover {
-  background: var(--bg-sunken);
+  background: var(--surface-hover);
 }
 
-/* Icon-only header buttons (theme toggle) — same visual language as .mapControls button. */
+/* Graphite icon button (outline variant) — theme toggle. */
 .iconButton {
   flex: none;
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   display: grid;
   place-items: center;
   color: var(--text);
-  background: var(--surface);
+  background: var(--field);
   border: 1px solid var(--border-control);
   border-radius: var(--radius);
   cursor: pointer;
 }
 .iconButton:hover {
-  background: var(--bg-sunken);
+  background: var(--surface-hover);
 }
 
 .item[data-dragging='true'] .card {
@@ -625,11 +662,12 @@
   margin: 0;
   inset: auto;
   width: 216px;
-  padding: 6px;
+  padding: 4px;
+  color: var(--text);
   background: var(--surface);
-  border: 1px solid var(--border-control);
-  border-radius: var(--radius);
-  box-shadow: 0 16px 36px -14px rgba(var(--shadow-rgb), 0.35);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 12px 32px -12px rgba(var(--shadow-rgb), 0.3);
   /* Belt-and-braces for the rare menu (or narrow viewport) too tall to ever fully
      fit — lib/hooks/usePopoverPosition.ts clamps into the viewport, this makes
      the overflow scrollable instead of clipped. */
@@ -647,18 +685,19 @@
   display: block;
   width: 100%;
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
+  line-height: 20px;
   text-align: left;
   color: var(--text);
   background: none;
   border: 0;
   border-radius: var(--radius-sm);
-  padding: 9px 10px;
+  padding: 8px 10px;
   min-height: 36px;
   cursor: pointer;
 }
 .menuItem:hover {
-  background: var(--bg-sunken);
+  background: var(--surface-hover);
 }
 .menuItem[aria-disabled='true'] {
   color: var(--text-subtle);
@@ -673,27 +712,27 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  font-size: 13px;
+  font-size: 14px;
   padding: 6px 10px;
 }
 .menuField select {
   font: inherit;
-  font-size: 13px;
-  padding: 5px 6px;
+  font-size: 14px;
+  padding: 0 6px;
   min-height: 32px;
   border: 1px solid var(--border-control);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
+  border-radius: var(--radius);
+  background: var(--field);
   color: var(--text);
 }
 .menuRule {
-  margin: 6px 4px;
+  margin: 4px;
   border: 0;
   border-top: 1px solid var(--border-hairline);
 }
 .menuIdentity {
-  margin: 4px 10px 8px;
-  font-size: 13px;
+  margin: 6px 10px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text);
   overflow-wrap: break-word;
@@ -709,7 +748,7 @@
 }
 .menuHint {
   display: block;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 400;
   color: var(--text-subtle);
   margin-top: 2px;
@@ -727,14 +766,19 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text);
   padding: 8px 10px;
+  min-height: 36px;
   border-radius: var(--radius-sm);
   cursor: pointer;
 }
 .themeOption:hover {
-  background: var(--bg-sunken);
+  background: var(--surface-hover);
+}
+.themeOption input {
+  accent-color: var(--accent-strong);
+  margin: 0;
 }
 
 /* --- undo --------------------------------------------------------------- */
@@ -745,19 +789,19 @@
   justify-content: space-between;
   gap: 12px;
   margin: 12px 16px 0;
-  padding: 10px 12px;
-  background: var(--bg-raised);
+  padding: 8px 12px;
+  background: var(--surface);
   border: 1px solid var(--border-hairline-strong);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
 }
 .undo p {
   margin: 0;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-muted);
 }
 .undoBtn {
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--accent-strong);
   background: none;
@@ -766,10 +810,12 @@
   min-height: 32px;
   cursor: pointer;
   text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .cardName {
   font: inherit;
-  font-size: 15px;
+  font-size: 16px;
+  line-height: 24px;
   font-weight: 600;
   color: var(--text);
   background: none;
@@ -779,24 +825,27 @@
   cursor: pointer;
 }
 .cardDesc {
-  margin: 4px 0 0;
+  margin: 2px 0 0;
   font-size: 13px;
-  line-height: 1.45;
+  line-height: 18px;
   color: var(--text-muted);
 }
 .cardMeta {
-  margin: 5px 0 0;
-  font-size: 11px;
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 18px;
   color: var(--text-subtle);
 }
 .needsReview {
-  margin: 4px 0 0;
+  margin: 2px 0 0;
   font-size: 13px;
+  line-height: 18px;
   color: var(--amber-chip-text);
 }
 .unreachableReason {
-  margin: 4px 0 0;
+  margin: 2px 0 0;
   font-size: 13px;
+  line-height: 18px;
   color: var(--danger-text);
 }
 
@@ -819,30 +868,37 @@
 .filterField input {
   width: 100%;
   font: inherit;
-  font-size: 13px;
+  /* 16px: below that, iOS zooms the whole page when the field takes focus. */
+  font-size: 16px;
   color: var(--text);
-  background: var(--surface);
+  background: var(--field);
   border: 1px solid var(--border-control);
   border-radius: var(--radius);
-  padding: 7px 10px;
-  min-height: 34px;
+  padding: 0 12px;
+  min-height: 40px;
 }
+/* Graphite filled chips (--secondary). */
 .jumpChips {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
 }
 .jumpChips a {
-  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  font-size: 13px;
   font-weight: 500;
-  padding: 4px 9px;
+  padding: 0 12px;
   border-radius: var(--pill);
-  border: 1px solid var(--border-control);
   color: var(--text);
-  background: var(--surface);
+  text-decoration: none;
+  background: var(--bg-raised);
+  /* Transparent in normal colours; forced-colors draws it, so the chip keeps a shape. */
+  border: 1px solid transparent;
 }
 .jumpChips a:hover {
-  background: var(--bg-sunken);
+  background: var(--surface-hover);
 }
 
 .countryGroup {
@@ -858,7 +914,7 @@
   scroll-margin-top: 40px;
 }
 .countryHeading:focus-visible {
-  outline: 2px solid var(--text);
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
 .countryToggle {
@@ -867,7 +923,8 @@
   gap: 6px;
   width: 100%;
   font: inherit;
-  font-size: 12px;
+  font-size: 13px;
+  line-height: 18px;
   font-weight: 600;
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -875,7 +932,7 @@
   background: var(--bg-sunken);
   border: 0;
   border-bottom: 1px solid var(--border-hairline-strong);
-  padding: 8px 4px;
+  padding: 10px 4px;
   cursor: pointer;
   text-align: left;
 }
@@ -884,7 +941,7 @@
 .directRow {
   margin: 0 0 8px;
   padding: 8px 10px;
-  font-size: 11px;
+  font-size: 13px;
   color: var(--text-subtle);
 }
 .directRow {
@@ -893,10 +950,10 @@
      needs to be at least as readable as body text, not quiet metadata. */
   font-size: 13px;
   color: var(--text);
-  background: var(--bg-raised);
-  border: 1px solid var(--border-control);
+  background: var(--surface);
+  border: 1px solid var(--border-hairline);
   border-left: 3px dashed var(--direct-line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
 }
 
 .peekMore {
@@ -907,21 +964,21 @@
   font: inherit;
   text-align: left;
   color: var(--text);
-  background: var(--bg-raised);
+  background: var(--surface);
   border: 1px dashed var(--border-control);
-  border-radius: var(--radius);
+  border-radius: var(--radius-xl);
   cursor: pointer;
 }
 .peekMoreTitle {
   display: block;
-  font-size: 12.5px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--accent-strong);
 }
 .peekMoreNames {
   display: block;
   margin-top: 1px;
-  font-size: 11.5px;
+  font-size: 13px;
   color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -939,13 +996,13 @@
 }
 .expandAllRow p {
   margin: 0;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-subtle);
 }
 .expandAllRow button {
   flex: none;
   font: inherit;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--accent-strong);
   background: none;
@@ -966,7 +1023,7 @@
   flex-direction: column;
   background: var(--bg-sunken);
   border-top: 1px solid var(--border-hairline-strong);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   box-shadow: 0 -8px 30px -12px rgba(var(--shadow-rgb), 0.3);
   /* Peek shows the handle, the summary, and the top edge of the first card. */
   transform: translateY(calc(88dvh - 190px));
@@ -1018,12 +1075,13 @@
   background: var(--accent-strong);
   color: var(--text-on-accent);
   font-family: var(--font-sans);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
   /* Ring + hairline so the pin reads against any tile colour. */
   border: 2px solid var(--pin-ring);
   outline: 1px solid var(--text);
-  box-shadow: 0 3px 8px rgba(60, 30, 10, 0.28);
+  box-shadow: 0 2px 6px rgba(var(--shadow-rgb), 0.28);
   cursor: pointer;
 }
 .pin[data-selected='true'] {
@@ -1041,18 +1099,18 @@
 .clusterPin {
   display: flex;
   align-items: center;
-  height: 26px;
+  height: 28px;
   padding: 0 10px;
   border-radius: var(--pill);
   background: var(--accent-strong);
   color: var(--text-on-accent);
   font-family: var(--font-sans);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
   border: 2px solid var(--pin-ring);
   outline: 1px solid var(--text);
-  box-shadow: 0 3px 8px rgba(60, 30, 10, 0.28);
+  box-shadow: 0 2px 6px rgba(var(--shadow-rgb), 0.28);
   cursor: pointer;
 }
 
@@ -1063,9 +1121,11 @@
   left: 12px;
   top: 12px;
   z-index: 2;
+  max-width: calc(100% - 24px);
   margin: 0;
-  padding: 5px 10px;
-  font-size: 11px;
+  padding: 4px 10px;
+  font-size: 13px;
+  line-height: 18px;
   color: var(--text);
   background: var(--surface-translucent);
   border: 1px solid var(--border-control);
@@ -1080,8 +1140,9 @@
   z-index: 2;
   margin: 0;
   padding-top: 3px;
-  font-family: var(--font-mono);
-  font-size: 10px;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
   color: var(--text-subtle);
   text-align: center;
   border-top: 2px solid var(--text-subtle);
@@ -1091,10 +1152,10 @@
    without reaching for !important. */
 .mapControls .fitAllButton {
   width: auto;
-  height: 32px;
-  padding: 0 10px;
-  font-size: 12px;
-  font-weight: 600;
+  height: 40px;
+  padding: 0 12px;
+  font-size: 14px;
+  font-weight: 500;
   white-space: nowrap;
 }
 
@@ -1154,7 +1215,8 @@
      reasoning as BottomSheet.tsx), so its visual weight shouldn't overstate
      that. */
   .menuSheet::backdrop {
-    background: rgba(20, 17, 14, 0.4);
+    /* Literal, not a token: ::backdrop doesn't inherit custom properties everywhere. */
+    background: rgba(12, 15, 18, 0.5);
   }
   .menuCancel {
     display: block;
@@ -1167,7 +1229,7 @@
     font-weight: 600;
     text-align: center;
     color: var(--text);
-    background: var(--bg-sunken);
+    background: var(--bg-raised);
     border: 0;
     border-radius: var(--radius);
     cursor: pointer;
@@ -1183,14 +1245,26 @@
     padding: 10px 14px;
   }
 
+  /* One row, never wrapping: logo · title (truncates) · rename | Export · theme ·
+     account. The title is the only flexible item, so nothing else can be pushed
+     onto a second line. */
   .header {
-    padding: 0 12px;
+    flex-wrap: nowrap;
+    padding: 6px 12px;
     gap: 8px;
   }
-  /* The wordmark TEXT hides, but .wordmarkLink stays — it's the only in-app way
-     back to /plans on mobile now that .ghost "All plans" is also hidden. The link's
-     aria-label keeps the accessible name stable even with the text gone. Padding
-     pads the 22px logo mark out to a 44px hit area without growing it visually. */
+  .headerLeft {
+    flex: 1 1 auto;
+    gap: 12px;
+  }
+  .headerRight {
+    flex: none;
+    gap: 8px;
+  }
+  /* The wordmark TEXT hides, but .wordmarkLink stays — it's the in-app way back
+     to /plans (and so to every other plan) on mobile. The link's aria-label keeps
+     the accessible name stable even with the text gone. Padding pads the 22px logo
+     mark out to a 44px hit area without growing it visually. */
   .wordmark {
     display: none;
   }
@@ -1198,31 +1272,104 @@
     padding: 11px;
     margin: -11px;
   }
-  .ghost {
+  /* "All plans" / "+ New plan": the logo link above covers it. Direct children
+     only — the rename form's Cancel is a .ghost deeper inside .headerLeft. */
+  .headerLeft > .ghost {
     display: none;
   }
-  .headerRight .ghost {
-    display: inline-block;
+  /* The plan switcher only repeated the title next to it at this width; switching
+     plans goes through the plans list (the logo link). "Import places" moves into
+     the bottom sheet (see Planner.tsx). The visible save chip has no room — the
+     sr-only status beside it still announces saves. */
+  .select,
+  .desktopOnly,
+  .saveStatus {
+    display: none;
   }
-  .select {
-    max-width: none;
-    flex: 1;
+  .planIdentity {
+    flex: 1 1 auto;
+    flex-wrap: nowrap;
+    gap: 4px;
   }
-  /* Tight header already loses the wordmark text and "All plans" at this width —
-     the title shrinks further rather than competing with the switcher for space. */
   .planTitle {
-    max-width: 9ch;
+    max-width: none;
+    min-width: 0;
+  }
+  /* Renaming: the form takes the whole row. The <h1> stays mounted (and in the
+     accessibility tree — see Header.tsx's PlanTitle) but has no room to be seen;
+     the input already holds the same text. */
+  .header:has(.renameForm) .headerRight {
+    display: none;
+  }
+  .planIdentity:has(.renameForm) .planTitle {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .renameForm {
+    flex: 1 1 auto;
   }
   .renameInput {
-    width: 16ch;
+    flex: 1 1 auto;
+    width: auto;
     /* >=16px or iOS auto-zooms the whole page on focus — 14px (the desktop size)
        would trigger it here. */
     font-size: 16px;
   }
+
+  /* Map overlays sit above the collapsed sheet (SHEET_PEEK_PX = 190), stacked so
+     none overlap: scale bottom-left, attribution bottom-right, controls above it. */
   .attribution {
-    bottom: calc(190px + 6px);
+    bottom: calc(190px + 8px);
+    /* Clears the scale bar: 12px inset + its 100px max width (lib/map/scale.ts) +
+       a 12px gap + this element's own 8px inset. Wraps to two lines instead. */
+    max-width: calc(100% - 132px);
+  }
+  .mapScale {
+    bottom: calc(190px + 8px);
   }
   .mapControls {
-    bottom: calc(190px + 12px);
+    bottom: calc(190px + 64px);
   }
+}
+
+/* Graphite: every control is at least 44px (--control-touch) on a touch screen. */
+@media (pointer: coarse) {
+  .primary,
+  .ghost,
+  .select,
+  .renameInput,
+  .addStopInput,
+  .filterField input,
+  .menuField select {
+    min-height: var(--control-touch);
+  }
+  .renameTrigger,
+  .iconButton,
+  .avatar,
+  .actionsTrigger,
+  .grip,
+  .mapControls button {
+    width: var(--control-touch);
+    height: var(--control-touch);
+  }
+  .mapControls .fitAllButton {
+    height: var(--control-touch);
+  }
+  .menuItem,
+  .themeOption,
+  .menuField,
+  .jumpChips a {
+    min-height: var(--control-touch);
+  }
+}
+
+/* Sheet-only actions row ("Import places" on mobile). */
+.sheetActions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 0 4px;
 }

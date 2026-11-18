@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import type { OptimizeResponse, Plan, Place, Route, UnreachableDiagnosis } from '@/lib/types';
 import { isRouteStale, orderHash } from '@/lib/routing/order';
 import { focusIndexAfterRemove, insertAt, moveTo, removeAt } from '@/lib/plan/reorder';
@@ -10,7 +11,7 @@ import type { RenameResult } from '@/lib/plan/title';
 import { MapView } from './MapView';
 import { PlaceList } from './PlaceList';
 import { SummaryBar } from './SummaryBar';
-import { BottomSheet } from './BottomSheet';
+import { BottomSheet, SHEET_PEEK_PX } from './BottomSheet';
 import { Header } from './Header';
 import { AddStopSearch } from './AddStopSearch';
 import styles from './planner.module.css';
@@ -268,6 +269,7 @@ export function Planner({ initialPlan, onSave, onRename, plans, account }: Props
       // the same pixels. One flag arbitrates: while a card is in the air, the map
       // stops panning and the sheet stops resizing.
       interactionLocked={dragging}
+      bottomInset={isMobile ? SHEET_PEEK_PX : 0}
     />
   );
 
@@ -346,6 +348,15 @@ export function Planner({ initialPlan, onSave, onRename, plans, account }: Props
               </>
             }
           >
+            {onSave && (
+              // The header's "Import places" link has no room on mobile — it lives
+              // here instead, next to the stops it adds to.
+              <div className={styles.sheetActions}>
+                <Link href={`/plans/${initialPlan.id}/import`} className={styles.ghost}>
+                  Import places
+                </Link>
+              </div>
+            )}
             <div id="stops">{list}</div>
           </BottomSheet>
         ) : (

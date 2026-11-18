@@ -11,16 +11,16 @@ export const MAP_COLORS: Record<
   { routeCasing: string; routeLine: string; routeStale: string; direct: string }
 > = {
   light: {
-    routeCasing: '#ffffff', // --surface
-    routeLine: '#c2643f', // --accent
-    routeStale: '#9a9288', // --border-control
-    direct: '#3f7c8c', // distinct teal so a no-road-route leg never reads as a driving one — matches --direct-line in planner.module.css
+    routeCasing: '#ffffff', // --background (Graphite light)
+    routeLine: '#6656c8', // --primary
+    routeStale: '#8b949e', // --input
+    direct: '#2f7fc9', // --chart-2, a distinct blue so a no-road-route leg never reads as a driving one — matches --direct-line
   },
   dark: {
-    routeCasing: '#17150f', // --bg, near-black casing per the design's dark-mode polarity flip
-    routeLine: '#f08a52', // --accent
-    routeStale: '#787268', // --border-control
-    direct: '#6fb3c2',
+    routeCasing: '#0c0f12', // --background (Graphite dark), near-black casing per the dark-mode polarity flip
+    routeLine: '#9084da', // --primary
+    routeStale: '#5d6872', // --input
+    direct: '#5596dc', // --chart-2
   },
 };
 

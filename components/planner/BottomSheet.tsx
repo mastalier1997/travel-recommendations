@@ -3,6 +3,11 @@
 import { useId, type ReactNode } from 'react';
 import styles from './planner.module.css';
 
+/** Height of the sheet at peek. planner.module.css hardcodes the same 190px (the
+ * sheet's peek transform, and the map controls/attribution lifted above it) —
+ * keep them in sync. MapView uses it to keep fitted stops out from under the sheet. */
+export const SHEET_PEEK_PX = 190;
+
 type Props = {
   expanded: boolean;
   onToggle: () => void;
